@@ -1,0 +1,9 @@
+{
+  "network-configs": {
+    "network-distributor": {
+      "name": "Network of Distributor",
+      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-distributor.json"
+    }
+  },
+  "license": "Apache-2.0"
+}

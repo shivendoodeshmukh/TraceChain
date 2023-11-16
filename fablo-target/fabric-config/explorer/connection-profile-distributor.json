@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "client": {
     "organization": "Distributor",
-    "tlsEnable": false,
+    "tlsEnable": true,
     "enableAuthentication": true,
     "adminCredential": {
       "id": "admin",
@@ -36,13 +36,13 @@
   },
   "peers": {
     "peer0.distributor.example.com": {
-      "url": "grpc://peer0.distributor.example.com:7081",
+      "url": "grpcs://peer0.distributor.example.com:7081",
       "tlsCACerts": {
         "path": "/tmp/crypto/peerOrganizations/distributor.example.com/msp/tlscacerts/tlsca.distributor.example.com-cert.pem"
       }
     },
     "peer1.distributor.example.com": {
-      "url": "grpc://peer1.distributor.example.com:7082",
+      "url": "grpcs://peer1.distributor.example.com:7082",
       "tlsCACerts": {
         "path": "/tmp/crypto/peerOrganizations/distributor.example.com/msp/tlscacerts/tlsca.distributor.example.com-cert.pem"
       }

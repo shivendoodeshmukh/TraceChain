@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "client": {
     "organization": "Manufacturer",
-    "tlsEnable": false,
+    "tlsEnable": true,
     "enableAuthentication": true,
     "adminCredential": {
       "id": "admin",
@@ -35,7 +35,7 @@
   },
   "peers": {
     "peer0.manufacturer.example.com": {
-      "url": "grpc://peer0.manufacturer.example.com:7061",
+      "url": "grpcs://peer0.manufacturer.example.com:7061",
       "tlsCACerts": {
         "path": "/tmp/crypto/peerOrganizations/manufacturer.example.com/msp/tlscacerts/tlsca.manufacturer.example.com-cert.pem"
       }

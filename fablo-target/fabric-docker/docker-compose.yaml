@@ -14,6 +14,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.orderer.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7020:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -37,6 +38,12 @@ services:
       #
       - CORE_PEER_LOCALMSPID=OrdererMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/msp
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -44,8 +51,15 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.manufacturer.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.distributor.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.distributor.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincodes/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
     networks:
       - basic
 
@@ -55,11 +69,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=OrdererMSP
-      - FABRIC_CA_URL=http://ca.orderer.example.com:7054
+      - FABRIC_CA_URL=https://ca.orderer.example.com:7054
       - FABRIC_CA_NAME=ca.orderer.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpcs://peer0.supplier.example.com:7041,grpcs://peer1.supplier.example.com:7042,grpcs://peer0.manufacturer.example.com:7061,grpcs://peer0.distributor.example.com:7081,grpcs://peer1.distributor.example.com:7082
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt,/crypto/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt,/crypto/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8800:8000
     networks:
@@ -77,6 +96,17 @@ services:
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - GODEBUG=netdns=go
+      # metrics
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer0.group1.orderer.example.com:9440
+      - ORDERER_METRICS_PROVIDER=prometheus
+      # enabled TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
     working_dir: /var/hyperledger/orderer
     command: orderer
     ports:
@@ -101,6 +131,17 @@ services:
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - GODEBUG=netdns=go
+      # metrics
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer1.group1.orderer.example.com:9440
+      - ORDERER_METRICS_PROVIDER=prometheus
+      # enabled TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
     working_dir: /var/hyperledger/orderer
     command: orderer
     ports:
@@ -125,6 +166,17 @@ services:
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - GODEBUG=netdns=go
+      # metrics
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer2.group1.orderer.example.com:9440
+      - ORDERER_METRICS_PROVIDER=prometheus
+      # enabled TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
     working_dir: /var/hyperledger/orderer
     command: orderer
     ports:
@@ -146,6 +198,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.supplier.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7040:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -170,6 +223,12 @@ services:
       - CORE_PEER_LOCALMSPID=SupplierMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@supplier.example.com/msp
       - CORE_PEER_ADDRESS=peer0.supplier.example.com:7041
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@supplier.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@supplier.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@supplier.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -177,8 +236,15 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.manufacturer.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.distributor.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.distributor.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincodes/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
     networks:
       - basic
 
@@ -188,11 +254,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=SupplierMSP
-      - FABRIC_CA_URL=http://ca.supplier.example.com:7054
+      - FABRIC_CA_URL=https://ca.supplier.example.com:7054
       - FABRIC_CA_NAME=ca.supplier.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpcs://peer0.supplier.example.com:7041,grpcs://peer1.supplier.example.com:7042,grpcs://peer0.manufacturer.example.com:7061,grpcs://peer0.distributor.example.com:7081,grpcs://peer1.distributor.example.com:7082
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt,/crypto/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt,/crypto/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8801:8000
     networks:
@@ -226,6 +297,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/
@@ -270,6 +346,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/
@@ -295,6 +376,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.manufacturer.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7060:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -319,6 +401,12 @@ services:
       - CORE_PEER_LOCALMSPID=ManufacturerMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@manufacturer.example.com/msp
       - CORE_PEER_ADDRESS=peer0.manufacturer.example.com:7061
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@manufacturer.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@manufacturer.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@manufacturer.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -326,8 +414,15 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.manufacturer.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.distributor.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.distributor.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincodes/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
     networks:
       - basic
 
@@ -337,11 +432,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=ManufacturerMSP
-      - FABRIC_CA_URL=http://ca.manufacturer.example.com:7054
+      - FABRIC_CA_URL=https://ca.manufacturer.example.com:7054
       - FABRIC_CA_NAME=ca.manufacturer.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpcs://peer0.supplier.example.com:7041,grpcs://peer1.supplier.example.com:7042,grpcs://peer0.manufacturer.example.com:7061,grpcs://peer0.distributor.example.com:7081,grpcs://peer1.distributor.example.com:7082
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt,/crypto/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt,/crypto/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8802:8000
     networks:
@@ -375,6 +475,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/
@@ -400,6 +505,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.distributor.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7080:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -424,6 +530,12 @@ services:
       - CORE_PEER_LOCALMSPID=DistributorMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@distributor.example.com/msp
       - CORE_PEER_ADDRESS=peer0.distributor.example.com:7081
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@distributor.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@distributor.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@distributor.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -431,8 +543,15 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.supplier.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.manufacturer.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.distributor.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer1.distributor.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincodes/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
     networks:
       - basic
 
@@ -442,11 +561,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=DistributorMSP
-      - FABRIC_CA_URL=http://ca.distributor.example.com:7054
+      - FABRIC_CA_URL=https://ca.distributor.example.com:7054
       - FABRIC_CA_NAME=ca.distributor.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpcs://peer0.supplier.example.com:7041,grpcs://peer1.supplier.example.com:7042,grpcs://peer0.manufacturer.example.com:7061,grpcs://peer0.distributor.example.com:7081,grpcs://peer1.distributor.example.com:7082
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt,/crypto/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt,/crypto/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt,/crypto/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8803:8000
     networks:
@@ -480,6 +604,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/
@@ -524,6 +653,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/

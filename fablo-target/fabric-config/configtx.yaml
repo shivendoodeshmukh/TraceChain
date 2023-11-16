@@ -77,7 +77,6 @@ Organizations:
           - Host: peer1.supplier.example.com
             Port: 7042
 
-
     - &Manufacturer
       Name: ManufacturerMSP
       ID: ManufacturerMSP
@@ -100,7 +99,6 @@ Organizations:
       AnchorPeers:
           - Host: peer0.manufacturer.example.com
             Port: 7061
-
 
     - &Distributor
       Name: DistributorMSP
@@ -127,8 +125,6 @@ Organizations:
 
           - Host: peer1.distributor.example.com
             Port: 7082
-
-
 
 ################################################################################
 #   SECTION: Application
@@ -158,28 +154,11 @@ Application: &ApplicationDefaults
 #   SECTION: Orderer
 ################################################################################
 Orderer: &Group1Defaults
-    OrdererType: etcdraft
+    OrdererType: solo
     Addresses:
         - orderer0.group1.orderer.example.com:7030
         - orderer1.group1.orderer.example.com:7031
         - orderer2.group1.orderer.example.com:7032
-    EtcdRaft:
-        Consenters:
-            - Host: orderer0.group1.orderer.example.com
-              Port: 7030
-              ClientTLSCert: crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/tls/server.crt
-              ServerTLSCert: crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/tls/server.crt
-
-            - Host: orderer1.group1.orderer.example.com
-              Port: 7031
-              ClientTLSCert: crypto-config/peerOrganizations/orderer.example.com/peers/orderer1.group1.orderer.example.com/tls/server.crt
-              ServerTLSCert: crypto-config/peerOrganizations/orderer.example.com/peers/orderer1.group1.orderer.example.com/tls/server.crt
-
-            - Host: orderer2.group1.orderer.example.com
-              Port: 7032
-              ClientTLSCert: crypto-config/peerOrganizations/orderer.example.com/peers/orderer2.group1.orderer.example.com/tls/server.crt
-              ServerTLSCert: crypto-config/peerOrganizations/orderer.example.com/peers/orderer2.group1.orderer.example.com/tls/server.crt
-
     BatchTimeout: 2s
     BatchSize:
         MaxMessageCount: 10
@@ -271,4 +250,3 @@ Profiles:
             Organizations:
                 - *Manufacturer
                 - *Distributor
-

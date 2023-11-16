@@ -2,5 +2,3 @@
 
 # The code from this file was called after Fablo generated Hyperledger Fabric configuration
 echo "Executing post-generate hook"
-
-

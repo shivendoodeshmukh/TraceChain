@@ -48,8 +48,8 @@ peerChannelFetchConfig() {
     -e CORE_PEER_ADDRESS="$PEER_ADDRESS" \
     "$CLI_NAME" configtxlator proto_decode \
     --input /tmp/hyperledger/assets/config_block_before.pb \
-    --type common.Block | \
-    jq .data.data[0].payload.data.config > "$CONFIG_FILE_NAME"
+    --type common.Block |
+    jq .data.data[0].payload.data.config >"$CONFIG_FILE_NAME"
 
   docker exec "$CLI_NAME" rm -rf /tmp/hyperledger/assets/
 }
@@ -75,7 +75,7 @@ peerChannelFetchBlock() {
     "$CLI_NAME" peer channel fetch "$BLOCK_NAME" "$TEMP_FILE" \
     -c "$CHANNEL_NAME"
 
-  docker exec "$CLI_NAME" cat "$TEMP_FILE" > "$TARGET_FILE"
+  docker exec "$CLI_NAME" cat "$TEMP_FILE" >"$TARGET_FILE"
 
   docker exec "$CLI_NAME" rm -rf /tmp/hyperledger/blocks/
 }
@@ -99,7 +99,6 @@ peerChannelGetInfoTls() {
   local CLI_NAME=$2
   local PEER_ADDRESS=$3
   local CA_CERT=$4
-
 
   echo "Getting info about $CHANNEL_NAME using peer $PEER_ADDRESS (TLS)..."
   inputLog "CHANNEL_NAME: $CHANNEL_NAME"
@@ -134,8 +133,8 @@ peerChannelFetchConfigTls() {
     -e CORE_PEER_ADDRESS="$PEER_ADDRESS" \
     "$CLI_NAME" configtxlator proto_decode \
     --input /tmp/hyperledger/assets/config_block_before.pb \
-    --type common.Block | \
-    jq .data.data[0].payload.data.config > "$CONFIG_FILE_NAME"
+    --type common.Block |
+    jq .data.data[0].payload.data.config >"$CONFIG_FILE_NAME"
 
   docker exec "$CLI_NAME" rm -rf /tmp/hyperledger/assets/
 }
@@ -162,7 +161,7 @@ peerChannelFetchBlockTls() {
     "$CLI_NAME" peer channel fetch "$BLOCK_NAME" "$TEMP_FILE" \
     -c "$CHANNEL_NAME" --tls --cafile "$CA_CERT"
 
-  docker exec "$CLI_NAME" cat "$TEMP_FILE" > "$TARGET_FILE"
+  docker exec "$CLI_NAME" cat "$TEMP_FILE" >"$TARGET_FILE"
 
   docker exec "$CLI_NAME" rm -rf /tmp/hyperledger/blocks/
 }

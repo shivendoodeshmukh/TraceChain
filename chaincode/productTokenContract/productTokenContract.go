@@ -13,14 +13,21 @@ type ProductContract struct {
 	contractapi.Contract
 }
 
-// ProductContract defines the structure of a product token
 type Product struct {
 	ID          	string `json:"id"`
 	Name        	string `json:"name"`
 	Status      	string `json:"status"`
-	Distributor    	string `json:"supplier"`
+	Distributor    	string `json:"distributor"`
 	Manufacturer 	string `json:"manufacturer"`
 	RawMaterialIDs 	[]string `json:"rawMaterialIDs"`
+}
+
+type RawMaterial struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Supplier    string `json:"supplier"`
+	Manufacturer string `json:"manufacturer"`
 }
 
 // Init initializes the smart contract
@@ -35,7 +42,7 @@ func (r *ProductContract) CreateProduct(ctx contractapi.TransactionContextInterf
 	// Use a incrementing ID to ensure unique product IDs
 	productIDbyte, err := ctx.GetStub().GetState("ProductIDIterator")
 	if err != nil {
-		return fmt.Errorf("failed to read from world state: %v", err)
+		return "", fmt.Errorf("failed to read from world state: %v", err)
 	}
 	productID := string(productIDbyte)
 	if productIDbyte == nil {
@@ -59,7 +66,10 @@ func (r *ProductContract) CreateProduct(ctx contractapi.TransactionContextInterf
 		return "", fmt.Errorf("product with ID %s already exists", productID)
 	}
 
-	ManufacturerID := ctx.GetClientIdentity().GetID()
+	ManufacturerID, err := ctx.GetClientIdentity().GetID()
+	if err != nil {
+		return "", fmt.Errorf("failed getting client's orgID: %v", err)
+	}
 
 	var rawMaterialIDsToBurn []string
 	for _, rawMaterialID := range rawMaterialIDs {
@@ -119,8 +129,8 @@ func (r *ProductContract) CreateProduct(ctx contractapi.TransactionContextInterf
 		return "", fmt.Errorf("failed to convert productID to int: %v", err)
 	}
 	productIDInt++
-	productIDnext = strconv.Itoa(productIDInt)
-	err = ctx.GetStub().PutState("ProductIDIterator", productIDnext)
+	productIDnext := strconv.Itoa(productIDInt)
+	err = ctx.GetStub().PutState("ProductIDIterator", []byte(productIDnext))
 	if err != nil {
 		return "", fmt.Errorf("failed to write to world state: %v", err)
 	}
@@ -153,8 +163,12 @@ func (r *ProductContract) InitiateTransferProduct(ctx contractapi.TransactionCon
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal product JSON: %v", err)
 	}
+	ID, err := ctx.GetClientIdentity().GetID()
+	if err != nil {
+		return fmt.Errorf("failed getting client's orgID: %v", err)
+	}
 
-	if product.Manufacturer != ctx.GetClientIdentity().GetID() {
+	if product.Manufacturer != ID {
 		return fmt.Errorf("Client of org %s is not authorized to perform this action", clientOrgID)
 	}
 	if product.Status != "New" {
@@ -202,7 +216,11 @@ func (r *ProductContract) CompleteTransferProduct(ctx contractapi.TransactionCon
 		return fmt.Errorf("failed to unmarshal product JSON: %v", err)
 	}
 
-	DistributorID := ctx.GetClientIdentity().GetID()
+	DistributorID, err := ctx.GetClientIdentity().GetID()
+	if err != nil {
+		return fmt.Errorf("failed getting client's orgID: %v", err)
+	}
+
 	if DistributorID != product.Distributor {
 		return fmt.Errorf("Client of org %s is not authorized to perform this action", clientOrgID)
 	}
@@ -274,11 +292,12 @@ func (r *ProductContract) GetProductHistory(ctx contractapi.TransactionContextIn
 }
 
 func (r *ProductContract) GetTotalNumberOfProducts(ctx contractapi.TransactionContextInterface) (int, error) {
-	productID, err := ctx.GetStub().GetState("ProductIDIterator")
+	productIDbyte, err := ctx.GetStub().GetState("ProductIDIterator")
 	if err != nil {
 		return 0, fmt.Errorf("failed to read from world state: %v", err)
 	}
-	if productID == nil {
+	productID := string(productIDbyte)
+	if productIDbyte == nil {
 		productID = "0"
 	}
 
@@ -290,11 +309,12 @@ func (r *ProductContract) GetTotalNumberOfProducts(ctx contractapi.TransactionCo
 }
 
 func (r *ProductContract) GetAllProducts(ctx contractapi.TransactionContextInterface) ([]*Product, error) {
-	productID, err := ctx.GetStub().GetState("ProductIDIterator")
+	productIDbyte, err := ctx.GetStub().GetState("ProductIDIterator")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from world state: %v", err)
 	}
-	if productID == nil {
+	productID := string(productIDbyte)
+	if productIDbyte == nil {
 		productID = "0"
 	}
 
@@ -310,17 +330,25 @@ func (r *ProductContract) GetAllProducts(ctx contractapi.TransactionContextInter
 		if err != nil {
 			return nil, fmt.Errorf("failed to read from world state: %v", err)
 		}
+		ID, err := ctx.GetClientIdentity().GetMSPID()
+		if err != nil {
+			return nil, fmt.Errorf("failed getting client's orgID: %v", err)
+		}
+		MSPID, err := ctx.GetClientIdentity().GetMSPID()
+		if err != nil {
+			return nil, fmt.Errorf("failed getting client's orgID: %v", err)
+		}
 
-		if ctx.GetClientIdentity().GetMSPID() == "ManufacturerMSP" {
-			if productJSON.Manufacturer == ctx.GetClientIdentity().GetID() {
+		if MSPID == "ManufacturerMSP" {
+			if productJSON.Manufacturer == ID {
 				products = append(products, productJSON)
 			}
-		} else if ctx.GetClientIdentity().GetMSPID() == "DistributorMSP" {
-			if productJSON.Distributor == ctx.GetClientIdentity().GetID() {
+		} else if MSPID == "DistributorMSP" {
+			if productJSON.Distributor == ID {
 				products = append(products, productJSON)
 			}
 		} else {
-			return nil, fmt.Errorf("Client of org %s is not authorized to perform this action", ctx.GetClientIdentity().GetMSPID())
+			return nil, fmt.Errorf("Client of org %s is not authorized to perform this action", MSPID)
 		}
 	}
 

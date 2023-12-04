@@ -12,134 +12,134 @@ channelQuery() {
 
   elif [ "$1" = "list" ] && [ "$2" = "supplier" ] && [ "$3" = "peer0" ]; then
 
-    peerChannelListTls "cli.supplier.example.com" "peer0.supplier.example.com:7041" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelList "cli.supplier.example.com" "peer0.supplier.example.com:7041"
 
   elif
     [ "$1" = "list" ] && [ "$2" = "supplier" ] && [ "$3" = "peer1" ]
   then
 
-    peerChannelListTls "cli.supplier.example.com" "peer1.supplier.example.com:7042" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelList "cli.supplier.example.com" "peer1.supplier.example.com:7042"
 
   elif
     [ "$1" = "list" ] && [ "$2" = "manufacturer" ] && [ "$3" = "peer0" ]
   then
 
-    peerChannelListTls "cli.manufacturer.example.com" "peer0.manufacturer.example.com:7061" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelList "cli.manufacturer.example.com" "peer0.manufacturer.example.com:7061"
 
   elif
     [ "$1" = "list" ] && [ "$2" = "distributor" ] && [ "$3" = "peer0" ]
   then
 
-    peerChannelListTls "cli.distributor.example.com" "peer0.distributor.example.com:7081" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelList "cli.distributor.example.com" "peer0.distributor.example.com:7081"
 
   elif
     [ "$1" = "list" ] && [ "$2" = "distributor" ] && [ "$3" = "peer1" ]
   then
 
-    peerChannelListTls "cli.distributor.example.com" "peer1.distributor.example.com:7082" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelList "cli.distributor.example.com" "peer1.distributor.example.com:7082"
 
   elif
 
     [ "$1" = "getinfo" ] && [ "$2" = "supply" ] && [ "$3" = "supplier" ] && [ "$4" = "peer0" ]
   then
 
-    peerChannelGetInfoTls "supply" "cli.supplier.example.com" "peer0.supplier.example.com:7041" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelGetInfo "supply" "cli.supplier.example.com" "peer0.supplier.example.com:7041"
 
   elif [ "$1" = "fetch" ] && [ "$2" = "config" ] && [ "$3" = "supply" ] && [ "$4" = "supplier" ] && [ "$5" = "peer0" ]; then
     TARGET_FILE=${6:-"$channel-config.json"}
 
-    peerChannelFetchConfigTls "supply" "cli.supplier.example.com" "$TARGET_FILE" "peer0.supplier.example.com:7041" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelFetchConfig "supply" "cli.supplier.example.com" "$TARGET_FILE" "peer0.supplier.example.com:7041"
 
   elif [ "$1" = "fetch" ] && [ "$3" = "supply" ] && [ "$4" = "supplier" ] && [ "$5" = "peer0" ]; then
     BLOCK_NAME=$2
     TARGET_FILE=${6:-"$BLOCK_NAME.block"}
 
-    peerChannelFetchBlockTls "supply" "cli.supplier.example.com" "${BLOCK_NAME}" "peer0.supplier.example.com:7041" "crypto-orderer/tlsca.orderer.example.com-cert.pem" "$TARGET_FILE"
+    peerChannelFetchBlock "supply" "cli.supplier.example.com" "${BLOCK_NAME}" "peer0.supplier.example.com:7041" "$TARGET_FILE"
 
   elif
     [ "$1" = "getinfo" ] && [ "$2" = "supply" ] && [ "$3" = "supplier" ] && [ "$4" = "peer1" ]
   then
 
-    peerChannelGetInfoTls "supply" "cli.supplier.example.com" "peer1.supplier.example.com:7042" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelGetInfo "supply" "cli.supplier.example.com" "peer1.supplier.example.com:7042"
 
   elif [ "$1" = "fetch" ] && [ "$2" = "config" ] && [ "$3" = "supply" ] && [ "$4" = "supplier" ] && [ "$5" = "peer1" ]; then
     TARGET_FILE=${6:-"$channel-config.json"}
 
-    peerChannelFetchConfigTls "supply" "cli.supplier.example.com" "$TARGET_FILE" "peer1.supplier.example.com:7042" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelFetchConfig "supply" "cli.supplier.example.com" "$TARGET_FILE" "peer1.supplier.example.com:7042"
 
   elif [ "$1" = "fetch" ] && [ "$3" = "supply" ] && [ "$4" = "supplier" ] && [ "$5" = "peer1" ]; then
     BLOCK_NAME=$2
     TARGET_FILE=${6:-"$BLOCK_NAME.block"}
 
-    peerChannelFetchBlockTls "supply" "cli.supplier.example.com" "${BLOCK_NAME}" "peer1.supplier.example.com:7042" "crypto-orderer/tlsca.orderer.example.com-cert.pem" "$TARGET_FILE"
+    peerChannelFetchBlock "supply" "cli.supplier.example.com" "${BLOCK_NAME}" "peer1.supplier.example.com:7042" "$TARGET_FILE"
 
   elif
     [ "$1" = "getinfo" ] && [ "$2" = "supply" ] && [ "$3" = "manufacturer" ] && [ "$4" = "peer0" ]
   then
 
-    peerChannelGetInfoTls "supply" "cli.manufacturer.example.com" "peer0.manufacturer.example.com:7061" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelGetInfo "supply" "cli.manufacturer.example.com" "peer0.manufacturer.example.com:7061"
 
   elif [ "$1" = "fetch" ] && [ "$2" = "config" ] && [ "$3" = "supply" ] && [ "$4" = "manufacturer" ] && [ "$5" = "peer0" ]; then
     TARGET_FILE=${6:-"$channel-config.json"}
 
-    peerChannelFetchConfigTls "supply" "cli.manufacturer.example.com" "$TARGET_FILE" "peer0.manufacturer.example.com:7061" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelFetchConfig "supply" "cli.manufacturer.example.com" "$TARGET_FILE" "peer0.manufacturer.example.com:7061"
 
   elif [ "$1" = "fetch" ] && [ "$3" = "supply" ] && [ "$4" = "manufacturer" ] && [ "$5" = "peer0" ]; then
     BLOCK_NAME=$2
     TARGET_FILE=${6:-"$BLOCK_NAME.block"}
 
-    peerChannelFetchBlockTls "supply" "cli.manufacturer.example.com" "${BLOCK_NAME}" "peer0.manufacturer.example.com:7061" "crypto-orderer/tlsca.orderer.example.com-cert.pem" "$TARGET_FILE"
+    peerChannelFetchBlock "supply" "cli.manufacturer.example.com" "${BLOCK_NAME}" "peer0.manufacturer.example.com:7061" "$TARGET_FILE"
 
   elif
     [ "$1" = "getinfo" ] && [ "$2" = "distribution" ] && [ "$3" = "manufacturer" ] && [ "$4" = "peer0" ]
   then
 
-    peerChannelGetInfoTls "distribution" "cli.manufacturer.example.com" "peer0.manufacturer.example.com:7061" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelGetInfo "distribution" "cli.manufacturer.example.com" "peer0.manufacturer.example.com:7061"
 
   elif [ "$1" = "fetch" ] && [ "$2" = "config" ] && [ "$3" = "distribution" ] && [ "$4" = "manufacturer" ] && [ "$5" = "peer0" ]; then
     TARGET_FILE=${6:-"$channel-config.json"}
 
-    peerChannelFetchConfigTls "distribution" "cli.manufacturer.example.com" "$TARGET_FILE" "peer0.manufacturer.example.com:7061" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelFetchConfig "distribution" "cli.manufacturer.example.com" "$TARGET_FILE" "peer0.manufacturer.example.com:7061"
 
   elif [ "$1" = "fetch" ] && [ "$3" = "distribution" ] && [ "$4" = "manufacturer" ] && [ "$5" = "peer0" ]; then
     BLOCK_NAME=$2
     TARGET_FILE=${6:-"$BLOCK_NAME.block"}
 
-    peerChannelFetchBlockTls "distribution" "cli.manufacturer.example.com" "${BLOCK_NAME}" "peer0.manufacturer.example.com:7061" "crypto-orderer/tlsca.orderer.example.com-cert.pem" "$TARGET_FILE"
+    peerChannelFetchBlock "distribution" "cli.manufacturer.example.com" "${BLOCK_NAME}" "peer0.manufacturer.example.com:7061" "$TARGET_FILE"
 
   elif
     [ "$1" = "getinfo" ] && [ "$2" = "distribution" ] && [ "$3" = "distributor" ] && [ "$4" = "peer0" ]
   then
 
-    peerChannelGetInfoTls "distribution" "cli.distributor.example.com" "peer0.distributor.example.com:7081" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelGetInfo "distribution" "cli.distributor.example.com" "peer0.distributor.example.com:7081"
 
   elif [ "$1" = "fetch" ] && [ "$2" = "config" ] && [ "$3" = "distribution" ] && [ "$4" = "distributor" ] && [ "$5" = "peer0" ]; then
     TARGET_FILE=${6:-"$channel-config.json"}
 
-    peerChannelFetchConfigTls "distribution" "cli.distributor.example.com" "$TARGET_FILE" "peer0.distributor.example.com:7081" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelFetchConfig "distribution" "cli.distributor.example.com" "$TARGET_FILE" "peer0.distributor.example.com:7081"
 
   elif [ "$1" = "fetch" ] && [ "$3" = "distribution" ] && [ "$4" = "distributor" ] && [ "$5" = "peer0" ]; then
     BLOCK_NAME=$2
     TARGET_FILE=${6:-"$BLOCK_NAME.block"}
 
-    peerChannelFetchBlockTls "distribution" "cli.distributor.example.com" "${BLOCK_NAME}" "peer0.distributor.example.com:7081" "crypto-orderer/tlsca.orderer.example.com-cert.pem" "$TARGET_FILE"
+    peerChannelFetchBlock "distribution" "cli.distributor.example.com" "${BLOCK_NAME}" "peer0.distributor.example.com:7081" "$TARGET_FILE"
 
   elif
     [ "$1" = "getinfo" ] && [ "$2" = "distribution" ] && [ "$3" = "distributor" ] && [ "$4" = "peer1" ]
   then
 
-    peerChannelGetInfoTls "distribution" "cli.distributor.example.com" "peer1.distributor.example.com:7082" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelGetInfo "distribution" "cli.distributor.example.com" "peer1.distributor.example.com:7082"
 
   elif [ "$1" = "fetch" ] && [ "$2" = "config" ] && [ "$3" = "distribution" ] && [ "$4" = "distributor" ] && [ "$5" = "peer1" ]; then
     TARGET_FILE=${6:-"$channel-config.json"}
 
-    peerChannelFetchConfigTls "distribution" "cli.distributor.example.com" "$TARGET_FILE" "peer1.distributor.example.com:7082" "crypto-orderer/tlsca.orderer.example.com-cert.pem"
+    peerChannelFetchConfig "distribution" "cli.distributor.example.com" "$TARGET_FILE" "peer1.distributor.example.com:7082"
 
   elif [ "$1" = "fetch" ] && [ "$3" = "distribution" ] && [ "$4" = "distributor" ] && [ "$5" = "peer1" ]; then
     BLOCK_NAME=$2
     TARGET_FILE=${6:-"$BLOCK_NAME.block"}
 
-    peerChannelFetchBlockTls "distribution" "cli.distributor.example.com" "${BLOCK_NAME}" "peer1.distributor.example.com:7082" "crypto-orderer/tlsca.orderer.example.com-cert.pem" "$TARGET_FILE"
+    peerChannelFetchBlock "distribution" "cli.distributor.example.com" "${BLOCK_NAME}" "peer1.distributor.example.com:7082" "$TARGET_FILE"
 
   else
 

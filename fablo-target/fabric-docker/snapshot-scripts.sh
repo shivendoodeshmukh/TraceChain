@@ -3,8 +3,6 @@
 __getOrdererAndPeerNodes() {
   echo "
       orderer0.group1.orderer.example.com
-      orderer1.group1.orderer.example.com
-      orderer2.group1.orderer.example.com
       peer0.supplier.example.com
       peer1.supplier.example.com
       peer0.manufacturer.example.com

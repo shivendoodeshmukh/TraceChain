@@ -81,7 +81,7 @@ func (r *RawMaterialContract) CreateRawMaterial(ctx contractapi.TransactionConte
 		return "", fmt.Errorf("failed to write to world state: %v", err)
 	}
 
-	rawMaterialIDInt, err := strconv.Atoi(rawMaterialID)
+	rawMaterialIDInt, err := strconv.Atoi(rawMaterialID[12:])
 	if err != nil {
 		return "", fmt.Errorf("failed to convert rawMaterialID to int: %v", err)
 	}
@@ -97,7 +97,7 @@ func (r *RawMaterialContract) CreateRawMaterial(ctx contractapi.TransactionConte
 }
 
 // InitiateTransferToManufacturer Initiates transfer of the raw material token to the manufacturer
-func (r *RawMaterialContract) InitiateTransferToManufacturer(ctx contractapi.TransactionContextInterface, rawMaterialID string, manufacturerID string) error {
+func (r *RawMaterialContract) InitiateTransferToManufacturer(ctx contractapi.TransactionContextInterface, rawMaterialID string, manufacturerMSP string) error {
 	rawMaterialID = "RawMaterial-" + rawMaterialID
 	rawMaterialJSON, err := ctx.GetStub().GetState(rawMaterialID)
 	if err != nil {
@@ -133,7 +133,7 @@ func (r *RawMaterialContract) InitiateTransferToManufacturer(ctx contractapi.Tra
 	}
 
 	rawMaterial.Status = "Transferring"
-	rawMaterial.Manufacturer = manufacturerID
+	rawMaterial.Manufacturer = manufacturerMSP
 
 	rawMaterialJSON, err = json.Marshal(rawMaterial)
 	if err != nil {
@@ -173,7 +173,7 @@ func (r *RawMaterialContract) CompleteTransferToManufacturer(ctx contractapi.Tra
 		return fmt.Errorf("failed to unmarshal raw material JSON: %v", err)
 	}
 
-	ManufacturerID, err := ctx.GetClientIdentity().GetID()
+	ManufacturerID, err := ctx.GetClientIdentity().GetMSPID()
 	if ManufacturerID != rawMaterial.Manufacturer {
 		return fmt.Errorf("Client of org %s is not authorized to perform this action", clientOrgID)
 	}

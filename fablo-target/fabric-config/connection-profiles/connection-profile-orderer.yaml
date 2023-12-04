@@ -16,46 +16,18 @@ organizations:
       - ca.orderer.example.com
 peers:
   peer0.supplier.example.com:
-    url: grpcs://localhost:7041
-    tlsCACerts:
-      path: >-
-        /home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer0.supplier.example.com/tls/ca.crt
-    grpcOptions:
-      ssl-target-name-override: peer0.supplier.example.com
+    url: grpc://localhost:7041
   peer1.supplier.example.com:
-    url: grpcs://localhost:7042
-    tlsCACerts:
-      path: >-
-        /home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer1.supplier.example.com/tls/ca.crt
-    grpcOptions:
-      ssl-target-name-override: peer1.supplier.example.com
+    url: grpc://localhost:7042
   peer0.manufacturer.example.com:
-    url: grpcs://localhost:7061
-    tlsCACerts:
-      path: >-
-        /home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt
-    grpcOptions:
-      ssl-target-name-override: peer0.manufacturer.example.com
+    url: grpc://localhost:7061
   peer0.distributor.example.com:
-    url: grpcs://localhost:7081
-    tlsCACerts:
-      path: >-
-        /home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls/ca.crt
-    grpcOptions:
-      ssl-target-name-override: peer0.distributor.example.com
+    url: grpc://localhost:7081
   peer1.distributor.example.com:
-    url: grpcs://localhost:7082
-    tlsCACerts:
-      path: >-
-        /home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer1.distributor.example.com/tls/ca.crt
-    grpcOptions:
-      ssl-target-name-override: peer1.distributor.example.com
+    url: grpc://localhost:7082
 certificateAuthorities:
   ca.orderer.example.com:
     url: http://localhost:7020
     caName: ca.orderer.example.com
-    tlsCACerts:
-      path: >-
-        /home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/orderer.example.com/ca/ca.orderer.example.com-cert.pem
     httpOptions:
       verify: false

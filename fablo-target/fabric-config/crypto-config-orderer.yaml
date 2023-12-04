@@ -3,8 +3,6 @@ PeerOrgs:
     Domain: orderer.example.com
     Specs:
       - Hostname: orderer0.group1
-      - Hostname: orderer1.group1
-      - Hostname: orderer2.group1
     Template:
       Count: 0
     Users:

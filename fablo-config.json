@@ -92,7 +92,7 @@
   "chaincodes": [
     {
       "name": "LogContract",
-      "version": "0.0.5",
+      "version": "0.0.1",
       "lang": "golang",
       "channel": "supply",
       "directory": "./chaincode/LogContract",
@@ -100,11 +100,19 @@
     },
     {
       "name": "GenerateCertificate",
-      "version": "0.0.5",
+      "version": "0.0.1",
       "lang": "golang",
       "channel": "supply",
       "directory": "./chaincode/GenerateCertificate",
       "endorsement": "AND('Hospital.member')"
+    },
+    {
+      "name": "DeviceStore",
+      "version": "0.0.1",
+      "lang": "golang",
+      "channel": "supply",
+      "directory": "./chaincode/DeviceStore",
+      "endorsement": "AND('IoTTracker.member')"
     }
   ]
 }

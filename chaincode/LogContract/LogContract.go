@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
@@ -14,28 +15,34 @@ type LogContract struct {
 }
 
 type Log struct {
-	DeviceID     string `json:"deviceID"`
-	Lat          string `json:"lat"`
-	Lon          string `json:"lon"`
-	Temp         string `json:"temp"`
-	Hum          string `json:"hum"`
-	MaxXAccl     string `json:"maxXAccl"`
-	MaxYAccl     string `json:"maxYAccl"`
-	MaxZAccl     string `json:"maxZAccl"`
-	Pitch        string `json:"pitch"`
-	Roll         string `json:"roll"`
-	Yaw          string `json:"yaw"`
-	Timestamp    string `json:"timestamp"`
-	PrevHash     string `json:"prevHash"`
-	Capabilities string `json:"capabilities"`
+	DeviceID     string   `json:"deviceID"`
+	Lat          string   `json:"lat"`
+	Lon          string   `json:"lon"`
+	IntTemp      string   `json:"intTemp"`
+	ExtTemp      string   `json:"extTemp"`
+	Hum          string   `json:"hum"`
+	MaxXAccl     string   `json:"maxXAccl"`
+	MaxYAccl     string   `json:"maxYAccl"`
+	MaxZAccl     string   `json:"maxZAccl"`
+	Pitch        string   `json:"pitch"`
+	Roll         string   `json:"roll"`
+	Yaw          string   `json:"yaw"`
+	Alt          string   `json:"alt"`
+	Satellites   string   `json:"satellites"`
+	Timestamp    string   `json:"timestamp"`
+	PrevHash     [32]byte `json:"prevHash"`
+	Capabilities string   `json:"capabilities"`
 }
 
 func (r *LogContract) Init(ctx contractapi.TransactionContextInterface, deviceID string, capabilities string) error {
 	fmt.Println("init")
 
+	timestamp := time.Now().UTC().Format("2006-01-02 15:04:05")
+
 	log := Log{
 		DeviceID:     deviceID,
 		Capabilities: capabilities,
+		Timestamp:    timestamp,
 	}
 
 	logJSON, err := json.Marshal(log)
@@ -58,7 +65,7 @@ func (r *LogContract) Init(ctx contractapi.TransactionContextInterface, deviceID
 	return nil
 }
 
-func (r *LogContract) log(ctx contractapi.TransactionContextInterface, deviceID string, lat string, lon string, temp string, hum string, maxXAccl string, maxYAccl string, maxZAccl string, pitch string, roll string, yaw string, timestamp string) error {
+func (r *LogContract) log(ctx contractapi.TransactionContextInterface, deviceID string, lat string, lon string, extTemp string, intTemp string, hum string, maxXAccl string, maxYAccl string, maxZAccl string, pitch string, roll string, yaw string, timestamp string) error {
 	fmt.Println("log")
 
 	prevHash, err := ctx.GetStub().GetState(deviceID)
@@ -66,14 +73,12 @@ func (r *LogContract) log(ctx contractapi.TransactionContextInterface, deviceID 
 		return err
 	}
 
-	// Convert prevHash to string
-	prevHashString := string(prevHash)
-
 	log := Log{
 		DeviceID:  deviceID,
 		Lat:       lat,
 		Lon:       lon,
-		Temp:      temp,
+		ExtTemp:   extTemp,
+		IntTemp:   intTemp,
 		Hum:       hum,
 		MaxXAccl:  maxXAccl,
 		MaxYAccl:  maxYAccl,
@@ -82,7 +87,7 @@ func (r *LogContract) log(ctx contractapi.TransactionContextInterface, deviceID 
 		Roll:      roll,
 		Yaw:       yaw,
 		Timestamp: timestamp,
-		PrevHash:  prevHashString,
+		PrevHash:  prevHash,
 	}
 
 	logJSON, err := json.Marshal(log)
@@ -93,6 +98,32 @@ func (r *LogContract) log(ctx contractapi.TransactionContextInterface, deviceID 
 	hash := sha256.Sum256(logJSON)
 
 	err = ctx.GetStub().PutState(deviceID, hash)
+	if err != nil {
+		return err
+	}
+
+	// Append hash to hashes
+	hashes, err := ctx.GetStub().GetState("hashes")
+	if err != nil {
+		return err
+	}
+
+	var hashesArray [][32]byte
+	if hashes != nil {
+		err = json.Unmarshal(hashes, &hashesArray)
+		if err != nil {
+			return err
+		}
+	}
+
+	hashesArray = append(hashesArray, hash)
+
+	hashesJSON, err := json.Marshal(hashesArray)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.GetStub().PutState("hashes", hashesJSON)
 	if err != nil {
 		return err
 	}
@@ -135,7 +166,7 @@ func (r *LogContract) getAllLogsByDeviceID(ctx contractapi.TransactionContextInt
 		return nil, err
 	}
 
-	logJSON, err := ctx.GetStub().GetState(string(hash))
+	logJSON, err := ctx.GetStub().GetState(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +183,7 @@ func (r *LogContract) getAllLogsByDeviceID(ctx contractapi.TransactionContextInt
 
 		prevHash := log.PrevHash
 
-		if prevHash == "" {
+		if prevHash == [32]byte{} {
 			break
 		}
 

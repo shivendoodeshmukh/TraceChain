@@ -1,9 +1,0 @@
-{
-  "network-configs": {
-    "network-manufacturer": {
-      "name": "Network of Manufacturer",
-      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-manufacturer.json"
-    }
-  },
-  "license": "Apache-2.0"
-}

@@ -1,9 +1,0 @@
-{
-  "network-configs": {
-    "network-supplier": {
-      "name": "Network of Supplier",
-      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-supplier.json"
-    }
-  },
-  "license": "Apache-2.0"
-}

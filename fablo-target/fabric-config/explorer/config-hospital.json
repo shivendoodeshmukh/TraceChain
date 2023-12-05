@@ -1,0 +1,9 @@
+{
+  "network-configs": {
+    "network-hospital": {
+      "name": "Network of Hospital",
+      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-hospital.json"
+    }
+  },
+  "license": "Apache-2.0"
+}

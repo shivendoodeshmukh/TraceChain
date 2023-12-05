@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -41,10 +44,15 @@ func (r *DeviceStore) RegisterDevice(ctx contractapi.TransactionContextInterface
 		return err
 	}
 	if deviceBytes != nil {
-		return err("Device already exists")
+		return fmt.Errorf("device already exists")
 	}
 
-	err = ctx.GetStub().PutState(deviceID, device)
+	deviceJSON, err := json.Marshal(device)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.GetStub().PutState(deviceID, deviceJSON)
 	if err != nil {
 		return err
 	}
@@ -63,7 +71,13 @@ func (r *DeviceStore) AuthenticateDevice(ctx contractapi.TransactionContextInter
 		return false, nil
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(device.(Device).PasswordHash), []byte(password))
+	var deviceStruct Device
+	err = json.Unmarshal(device, &deviceStruct)
+	if err != nil {
+		return false, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(deviceStruct.PasswordHash), []byte(password))
 	if err != nil {
 		return false, nil
 	}

@@ -1,16 +1,16 @@
 {
   "network-configs": {
-    "network-supplier": {
-      "name": "Network of Supplier",
-      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-supplier.json"
+    "network-pharma": {
+      "name": "Network of Pharma",
+      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-pharma.json"
     },
-    "network-manufacturer": {
-      "name": "Network of Manufacturer",
-      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-manufacturer.json"
+    "network-hospital": {
+      "name": "Network of Hospital",
+      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-hospital.json"
     },
-    "network-distributor": {
-      "name": "Network of Distributor",
-      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-distributor.json"
+    "network-iottracker": {
+      "name": "Network of IoTTracker",
+      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-iottracker.json"
     }
   },
   "license": "Apache-2.0"

@@ -3,20 +3,18 @@
 __getOrdererAndPeerNodes() {
   echo "
       orderer0.group1.orderer.example.com
-      peer0.supplier.example.com
-      peer1.supplier.example.com
-      peer0.manufacturer.example.com
-      peer0.distributor.example.com
-      peer1.distributor.example.com
+      peer0.pharma.example.com
+      peer0.hospital.example.com
+      peer0.tracker.example.com
   "
 }
 
 __getCASQLiteNodes() {
   echo "
       ca.orderer.example.com
-      ca.supplier.example.com
-      ca.manufacturer.example.com
-      ca.distributor.example.com
+      ca.pharma.example.com
+      ca.hospital.example.com
+      ca.tracker.example.com
   "
 }
 

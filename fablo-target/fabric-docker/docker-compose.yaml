@@ -45,8 +45,9 @@ services:
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com:/var/hyperledger/cli/crypto/
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
-      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/DeviceStore/:/var/hyperledger/cli/DeviceStore/"
     networks:
       - basic
 
@@ -59,7 +60,7 @@ services:
       - FABRIC_CA_URL=http://ca.orderer.example.com:7054
       - FABRIC_CA_NAME=ca.orderer.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
     ports:
       - 8800:8000
@@ -90,80 +91,81 @@ services:
     networks:
       - basic
 
-  ca.supplier.example.com:
-    container_name: ca.supplier.example.com
+  ca.pharma.example.com:
+    container_name: ca.pharma.example.com
     image: hyperledger/fabric-ca:${FABRIC_CA_VERSION}
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca.supplier.example.com
-      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.supplier.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_NAME=ca.pharma.example.com
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.pharma.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
     ports:
       - 7040:7054
     working_dir: /etc/hyperledger/fabric-ca-server
-    command: sh -c 'fabric-ca-server start -b ${SUPPLIER_CA_ADMIN_NAME}:${SUPPLIER_CA_ADMIN_PASSWORD} -d'
+    command: sh -c 'fabric-ca-server start -b ${PHARMA_CA_ADMIN_NAME}:${PHARMA_CA_ADMIN_PASSWORD} -d'
     volumes:
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/ca/:/etc/hyperledger/fabric-ca-server/crypto
-      - ../fabric-config/fabric-ca-server-config/supplier.example.com/fabric-ca-server-config.yaml:/etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/ca/:/etc/hyperledger/fabric-ca-server/crypto
+      - ../fabric-config/fabric-ca-server-config/pharma.example.com/fabric-ca-server-config.yaml:/etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
     networks:
       - basic
 
-  cli.supplier.example.com:
-    container_name: cli.supplier.example.com
+  cli.pharma.example.com:
+    container_name: cli.pharma.example.com
     image: hyperledger/fabric-tools:${FABRIC_VERSION}
     tty: true
     environment:
       - GOPATH=/opt/gopath
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
-      - CORE_PEER_ID=cli.supplier.example.com
+      - CORE_PEER_ID=cli.pharma.example.com
       - CORE_CHAINCODE_KEEPALIVE=10
       #
-      - CORE_PEER_LOCALMSPID=SupplierMSP
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@supplier.example.com/msp
-      - CORE_PEER_ADDRESS=peer0.supplier.example.com:7041
+      - CORE_PEER_LOCALMSPID=PharmaMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@pharma.example.com/msp
+      - CORE_PEER_ADDRESS=peer0.pharma.example.com:7041
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com:/var/hyperledger/cli/crypto/
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
-      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/DeviceStore/:/var/hyperledger/cli/DeviceStore/"
     networks:
       - basic
 
-  fablo-rest.supplier.example.com:
-    container_name: fablo-rest.supplier.example.com
+  fablo-rest.pharma.example.com:
+    container_name: fablo-rest.pharma.example.com
     image: softwaremill/fablo-rest:${FABLO_REST_VERSION}
     environment:
       - PORT=8000
-      - MSP_ID=SupplierMSP
-      - FABRIC_CA_URL=http://ca.supplier.example.com:7054
-      - FABRIC_CA_NAME=ca.supplier.example.com
+      - MSP_ID=PharmaMSP
+      - FABRIC_CA_URL=http://ca.pharma.example.com:7054
+      - FABRIC_CA_NAME=ca.pharma.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
     ports:
       - 8801:8000
     networks:
       - basic
 
-  peer0.supplier.example.com:
-    container_name: peer0.supplier.example.com
+  peer0.pharma.example.com:
+    container_name: peer0.pharma.example.com
     image: hyperledger/fabric-peer:${FABRIC_VERSION}
     environment:
-      - CORE_PEER_LOCALMSPID=SupplierMSP
-      - CORE_PEER_ID=peer0.supplier.example.com
-      - CORE_PEER_ADDRESS=peer0.supplier.example.com:7041
-      - CORE_PEER_LISTENADDRESS=peer0.supplier.example.com:7041
-      - CORE_PEER_GOSSIP_ENDPOINT=peer0.supplier.example.com:7041
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.supplier.example.com:7041
-      - CORE_PEER_GOSSIP_BOOTSTRAP="peer0.supplier.example.com:7041 peer1.supplier.example.com:7042"
-      - CORE_PEER_CHAINCODELISTENADDRESS=peer0.supplier.example.com:7050
+      - CORE_PEER_LOCALMSPID=PharmaMSP
+      - CORE_PEER_ID=peer0.pharma.example.com
+      - CORE_PEER_ADDRESS=peer0.pharma.example.com:7041
+      - CORE_PEER_LISTENADDRESS=peer0.pharma.example.com:7041
+      - CORE_PEER_GOSSIP_ENDPOINT=peer0.pharma.example.com:7041
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.pharma.example.com:7041
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.pharma.example.com:7041
+      - CORE_PEER_CHAINCODELISTENADDRESS=peer0.pharma.example.com:7050
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/peer/msp
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:${FABRIC_CCENV_VERSION}
       - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:${FABRIC_BASEOS_VERSION}
@@ -173,7 +175,7 @@ services:
       - CORE_CHAINCODE_LOGGING_SHIM=${LOGGING_LEVEL}
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
       # metrics
-      - CORE_OPERATIONS_LISTENADDRESS=peer0.supplier.example.com:9440
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.pharma.example.com:9440
       - CORE_METRICS_PROVIDER=prometheus
       #
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
@@ -189,131 +191,88 @@ services:
       - 7041:7041
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer0.supplier.example.com/msp:/etc/hyperledger/fabric/peer/msp
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer0.supplier.example.com/tls:/etc/hyperledger/fabric/peer/tls
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/users:/etc/hyperledger/fabric/peer/msp/users
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/peers/peer0.pharma.example.com/msp:/etc/hyperledger/fabric/peer/msp
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/peers/peer0.pharma.example.com/tls:/etc/hyperledger/fabric/peer/tls
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/users:/etc/hyperledger/fabric/peer/msp/users
       - ../fabric-config/config:/etc/hyperledger/fabric/config
     networks:
       - basic
 
-  peer1.supplier.example.com:
-    container_name: peer1.supplier.example.com
-    image: hyperledger/fabric-peer:${FABRIC_VERSION}
-    environment:
-      - CORE_PEER_LOCALMSPID=SupplierMSP
-      - CORE_PEER_ID=peer1.supplier.example.com
-      - CORE_PEER_ADDRESS=peer1.supplier.example.com:7042
-      - CORE_PEER_LISTENADDRESS=peer1.supplier.example.com:7042
-      - CORE_PEER_GOSSIP_ENDPOINT=peer1.supplier.example.com:7042
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.supplier.example.com:7042
-      - CORE_PEER_GOSSIP_BOOTSTRAP="peer0.supplier.example.com:7041 peer1.supplier.example.com:7042"
-      - CORE_PEER_CHAINCODELISTENADDRESS=peer1.supplier.example.com:7050
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/peer/msp
-      - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:${FABRIC_CCENV_VERSION}
-      - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:${FABRIC_BASEOS_VERSION}
-      - CORE_CHAINCODE_JAVA_RUNTIME=hyperledger/fabric-javaenv:${FABRIC_JAVAENV_VERSION}
-      #
-      - CORE_CHAINCODE_LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CORE_CHAINCODE_LOGGING_SHIM=${LOGGING_LEVEL}
-      - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
-      # metrics
-      - CORE_OPERATIONS_LISTENADDRESS=peer1.supplier.example.com:9440
-      - CORE_METRICS_PROVIDER=prometheus
-      #
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
-      - CORE_VM_DOCKER_ATTACHSTDOUT=true
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - GODEBUG=netdns=go
-      # enabled gateway
-      - CORE_PEER_GATEWAY_ENABLED=true
-    working_dir: /etc/hyperledger/fabric/peer/
-    command: peer node start
-    ports:
-      - 8042:9440
-      - 7042:7042
-    volumes:
-      - /var/run/docker.sock:/host/var/run/docker.sock
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer1.supplier.example.com/msp:/etc/hyperledger/fabric/peer/msp
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/peers/peer1.supplier.example.com/tls:/etc/hyperledger/fabric/peer/tls
-      - ../fabric-config/crypto-config/peerOrganizations/supplier.example.com/users:/etc/hyperledger/fabric/peer/msp/users
-      - ../fabric-config/config:/etc/hyperledger/fabric/config
-    networks:
-      - basic
-
-  ca.manufacturer.example.com:
-    container_name: ca.manufacturer.example.com
+  ca.hospital.example.com:
+    container_name: ca.hospital.example.com
     image: hyperledger/fabric-ca:${FABRIC_CA_VERSION}
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca.manufacturer.example.com
-      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.manufacturer.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_NAME=ca.hospital.example.com
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.hospital.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
     ports:
       - 7060:7054
     working_dir: /etc/hyperledger/fabric-ca-server
-    command: sh -c 'fabric-ca-server start -b ${MANUFACTURER_CA_ADMIN_NAME}:${MANUFACTURER_CA_ADMIN_PASSWORD} -d'
+    command: sh -c 'fabric-ca-server start -b ${HOSPITAL_CA_ADMIN_NAME}:${HOSPITAL_CA_ADMIN_PASSWORD} -d'
     volumes:
-      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/ca/:/etc/hyperledger/fabric-ca-server/crypto
-      - ../fabric-config/fabric-ca-server-config/manufacturer.example.com/fabric-ca-server-config.yaml:/etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/ca/:/etc/hyperledger/fabric-ca-server/crypto
+      - ../fabric-config/fabric-ca-server-config/hospital.example.com/fabric-ca-server-config.yaml:/etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
     networks:
       - basic
 
-  cli.manufacturer.example.com:
-    container_name: cli.manufacturer.example.com
+  cli.hospital.example.com:
+    container_name: cli.hospital.example.com
     image: hyperledger/fabric-tools:${FABRIC_VERSION}
     tty: true
     environment:
       - GOPATH=/opt/gopath
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
-      - CORE_PEER_ID=cli.manufacturer.example.com
+      - CORE_PEER_ID=cli.hospital.example.com
       - CORE_CHAINCODE_KEEPALIVE=10
       #
-      - CORE_PEER_LOCALMSPID=ManufacturerMSP
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@manufacturer.example.com/msp
-      - CORE_PEER_ADDRESS=peer0.manufacturer.example.com:7061
+      - CORE_PEER_LOCALMSPID=HospitalMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@hospital.example.com/msp
+      - CORE_PEER_ADDRESS=peer0.hospital.example.com:7061
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
-      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com:/var/hyperledger/cli/crypto/
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
-      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/DeviceStore/:/var/hyperledger/cli/DeviceStore/"
     networks:
       - basic
 
-  fablo-rest.manufacturer.example.com:
-    container_name: fablo-rest.manufacturer.example.com
+  fablo-rest.hospital.example.com:
+    container_name: fablo-rest.hospital.example.com
     image: softwaremill/fablo-rest:${FABLO_REST_VERSION}
     environment:
       - PORT=8000
-      - MSP_ID=ManufacturerMSP
-      - FABRIC_CA_URL=http://ca.manufacturer.example.com:7054
-      - FABRIC_CA_NAME=ca.manufacturer.example.com
+      - MSP_ID=HospitalMSP
+      - FABRIC_CA_URL=http://ca.hospital.example.com:7054
+      - FABRIC_CA_NAME=ca.hospital.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
     ports:
       - 8802:8000
     networks:
       - basic
 
-  peer0.manufacturer.example.com:
-    container_name: peer0.manufacturer.example.com
+  peer0.hospital.example.com:
+    container_name: peer0.hospital.example.com
     image: hyperledger/fabric-peer:${FABRIC_VERSION}
     environment:
-      - CORE_PEER_LOCALMSPID=ManufacturerMSP
-      - CORE_PEER_ID=peer0.manufacturer.example.com
-      - CORE_PEER_ADDRESS=peer0.manufacturer.example.com:7061
-      - CORE_PEER_LISTENADDRESS=peer0.manufacturer.example.com:7061
-      - CORE_PEER_GOSSIP_ENDPOINT=peer0.manufacturer.example.com:7061
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.manufacturer.example.com:7061
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.manufacturer.example.com:7061
-      - CORE_PEER_CHAINCODELISTENADDRESS=peer0.manufacturer.example.com:7050
+      - CORE_PEER_LOCALMSPID=HospitalMSP
+      - CORE_PEER_ID=peer0.hospital.example.com
+      - CORE_PEER_ADDRESS=peer0.hospital.example.com:7061
+      - CORE_PEER_LISTENADDRESS=peer0.hospital.example.com:7061
+      - CORE_PEER_GOSSIP_ENDPOINT=peer0.hospital.example.com:7061
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.hospital.example.com:7061
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.hospital.example.com:7061
+      - CORE_PEER_CHAINCODELISTENADDRESS=peer0.hospital.example.com:7050
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/peer/msp
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:${FABRIC_CCENV_VERSION}
       - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:${FABRIC_BASEOS_VERSION}
@@ -323,7 +282,7 @@ services:
       - CORE_CHAINCODE_LOGGING_SHIM=${LOGGING_LEVEL}
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
       # metrics
-      - CORE_OPERATIONS_LISTENADDRESS=peer0.manufacturer.example.com:9440
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.hospital.example.com:9440
       - CORE_METRICS_PROVIDER=prometheus
       #
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
@@ -339,87 +298,88 @@ services:
       - 7061:7061
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
-      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/msp:/etc/hyperledger/fabric/peer/msp
-      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls:/etc/hyperledger/fabric/peer/tls
-      - ../fabric-config/crypto-config/peerOrganizations/manufacturer.example.com/users:/etc/hyperledger/fabric/peer/msp/users
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/peers/peer0.hospital.example.com/msp:/etc/hyperledger/fabric/peer/msp
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/peers/peer0.hospital.example.com/tls:/etc/hyperledger/fabric/peer/tls
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/users:/etc/hyperledger/fabric/peer/msp/users
       - ../fabric-config/config:/etc/hyperledger/fabric/config
     networks:
       - basic
 
-  ca.distributor.example.com:
-    container_name: ca.distributor.example.com
+  ca.tracker.example.com:
+    container_name: ca.tracker.example.com
     image: hyperledger/fabric-ca:${FABRIC_CA_VERSION}
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca.distributor.example.com
-      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.distributor.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_NAME=ca.tracker.example.com
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.tracker.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
     ports:
       - 7080:7054
     working_dir: /etc/hyperledger/fabric-ca-server
-    command: sh -c 'fabric-ca-server start -b ${DISTRIBUTOR_CA_ADMIN_NAME}:${DISTRIBUTOR_CA_ADMIN_PASSWORD} -d'
+    command: sh -c 'fabric-ca-server start -b ${IOTTRACKER_CA_ADMIN_NAME}:${IOTTRACKER_CA_ADMIN_PASSWORD} -d'
     volumes:
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/ca/:/etc/hyperledger/fabric-ca-server/crypto
-      - ../fabric-config/fabric-ca-server-config/distributor.example.com/fabric-ca-server-config.yaml:/etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/ca/:/etc/hyperledger/fabric-ca-server/crypto
+      - ../fabric-config/fabric-ca-server-config/tracker.example.com/fabric-ca-server-config.yaml:/etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
     networks:
       - basic
 
-  cli.distributor.example.com:
-    container_name: cli.distributor.example.com
+  cli.tracker.example.com:
+    container_name: cli.tracker.example.com
     image: hyperledger/fabric-tools:${FABRIC_VERSION}
     tty: true
     environment:
       - GOPATH=/opt/gopath
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
-      - CORE_PEER_ID=cli.distributor.example.com
+      - CORE_PEER_ID=cli.tracker.example.com
       - CORE_CHAINCODE_KEEPALIVE=10
       #
-      - CORE_PEER_LOCALMSPID=DistributorMSP
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@distributor.example.com/msp
-      - CORE_PEER_ADDRESS=peer0.distributor.example.com:7081
+      - CORE_PEER_LOCALMSPID=IoTTrackerMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@tracker.example.com/msp
+      - CORE_PEER_ADDRESS=peer0.tracker.example.com:7081
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com:/var/hyperledger/cli/crypto/
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
-      - "$CHAINCODES_BASE_DIR/./chaincode/rawMaterialTokenContract/:/var/hyperledger/cli/rawMaterialTokenContract/"
-      - "$CHAINCODES_BASE_DIR/./chaincode/productTokenContract/:/var/hyperledger/cli/productTokenContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
+      - "$CHAINCODES_BASE_DIR/./chaincode/DeviceStore/:/var/hyperledger/cli/DeviceStore/"
     networks:
       - basic
 
-  fablo-rest.distributor.example.com:
-    container_name: fablo-rest.distributor.example.com
+  fablo-rest.tracker.example.com:
+    container_name: fablo-rest.tracker.example.com
     image: softwaremill/fablo-rest:${FABLO_REST_VERSION}
     environment:
       - PORT=8000
-      - MSP_ID=DistributorMSP
-      - FABRIC_CA_URL=http://ca.distributor.example.com:7054
-      - FABRIC_CA_NAME=ca.distributor.example.com
+      - MSP_ID=IoTTrackerMSP
+      - FABRIC_CA_URL=http://ca.tracker.example.com:7054
+      - FABRIC_CA_NAME=ca.tracker.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.supplier.example.com:7041,grpc://peer1.supplier.example.com:7042,grpc://peer0.manufacturer.example.com:7061,grpc://peer0.distributor.example.com:7081,grpc://peer1.distributor.example.com:7082
+      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
     ports:
       - 8803:8000
     networks:
       - basic
 
-  peer0.distributor.example.com:
-    container_name: peer0.distributor.example.com
+  peer0.tracker.example.com:
+    container_name: peer0.tracker.example.com
     image: hyperledger/fabric-peer:${FABRIC_VERSION}
     environment:
-      - CORE_PEER_LOCALMSPID=DistributorMSP
-      - CORE_PEER_ID=peer0.distributor.example.com
-      - CORE_PEER_ADDRESS=peer0.distributor.example.com:7081
-      - CORE_PEER_LISTENADDRESS=peer0.distributor.example.com:7081
-      - CORE_PEER_GOSSIP_ENDPOINT=peer0.distributor.example.com:7081
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.distributor.example.com:7081
-      - CORE_PEER_GOSSIP_BOOTSTRAP="peer0.distributor.example.com:7081 peer1.distributor.example.com:7082"
-      - CORE_PEER_CHAINCODELISTENADDRESS=peer0.distributor.example.com:7050
+      - CORE_PEER_LOCALMSPID=IoTTrackerMSP
+      - CORE_PEER_ID=peer0.tracker.example.com
+      - CORE_PEER_ADDRESS=peer0.tracker.example.com:7081
+      - CORE_PEER_LISTENADDRESS=peer0.tracker.example.com:7081
+      - CORE_PEER_GOSSIP_ENDPOINT=peer0.tracker.example.com:7081
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.tracker.example.com:7081
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.tracker.example.com:7081
+      - CORE_PEER_CHAINCODELISTENADDRESS=peer0.tracker.example.com:7050
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/peer/msp
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:${FABRIC_CCENV_VERSION}
       - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:${FABRIC_BASEOS_VERSION}
@@ -429,7 +389,7 @@ services:
       - CORE_CHAINCODE_LOGGING_SHIM=${LOGGING_LEVEL}
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
       # metrics
-      - CORE_OPERATIONS_LISTENADDRESS=peer0.distributor.example.com:9440
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.tracker.example.com:9440
       - CORE_METRICS_PROVIDER=prometheus
       #
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
@@ -445,53 +405,9 @@ services:
       - 7081:7081
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/fabric/peer/msp
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/etc/hyperledger/fabric/peer/tls
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/users:/etc/hyperledger/fabric/peer/msp/users
-      - ../fabric-config/config:/etc/hyperledger/fabric/config
-    networks:
-      - basic
-
-  peer1.distributor.example.com:
-    container_name: peer1.distributor.example.com
-    image: hyperledger/fabric-peer:${FABRIC_VERSION}
-    environment:
-      - CORE_PEER_LOCALMSPID=DistributorMSP
-      - CORE_PEER_ID=peer1.distributor.example.com
-      - CORE_PEER_ADDRESS=peer1.distributor.example.com:7082
-      - CORE_PEER_LISTENADDRESS=peer1.distributor.example.com:7082
-      - CORE_PEER_GOSSIP_ENDPOINT=peer1.distributor.example.com:7082
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.distributor.example.com:7082
-      - CORE_PEER_GOSSIP_BOOTSTRAP="peer0.distributor.example.com:7081 peer1.distributor.example.com:7082"
-      - CORE_PEER_CHAINCODELISTENADDRESS=peer1.distributor.example.com:7050
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/peer/msp
-      - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:${FABRIC_CCENV_VERSION}
-      - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:${FABRIC_BASEOS_VERSION}
-      - CORE_CHAINCODE_JAVA_RUNTIME=hyperledger/fabric-javaenv:${FABRIC_JAVAENV_VERSION}
-      #
-      - CORE_CHAINCODE_LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CORE_CHAINCODE_LOGGING_SHIM=${LOGGING_LEVEL}
-      - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
-      # metrics
-      - CORE_OPERATIONS_LISTENADDRESS=peer1.distributor.example.com:9440
-      - CORE_METRICS_PROVIDER=prometheus
-      #
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
-      - CORE_VM_DOCKER_ATTACHSTDOUT=true
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - GODEBUG=netdns=go
-      # enabled gateway
-      - CORE_PEER_GATEWAY_ENABLED=true
-    working_dir: /etc/hyperledger/fabric/peer/
-    command: peer node start
-    ports:
-      - 8082:9440
-      - 7082:7082
-    volumes:
-      - /var/run/docker.sock:/host/var/run/docker.sock
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer1.distributor.example.com/msp:/etc/hyperledger/fabric/peer/msp
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/peers/peer1.distributor.example.com/tls:/etc/hyperledger/fabric/peer/tls
-      - ../fabric-config/crypto-config/peerOrganizations/distributor.example.com/users:/etc/hyperledger/fabric/peer/msp/users
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/peers/peer0.tracker.example.com/msp:/etc/hyperledger/fabric/peer/msp
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/peers/peer0.tracker.example.com/tls:/etc/hyperledger/fabric/peer/tls
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/users:/etc/hyperledger/fabric/peer/msp/users
       - ../fabric-config/config:/etc/hyperledger/fabric/config
     networks:
       - basic

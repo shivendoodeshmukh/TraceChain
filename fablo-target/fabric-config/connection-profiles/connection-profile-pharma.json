@@ -1,20 +1,20 @@
 {
-  "name": "fablo-test-network-orderer",
-  "description": "Connection profile for Orderer in Fablo network",
+  "name": "fablo-test-network-pharma",
+  "description": "Connection profile for Pharma in Fablo network",
   "version": "1.0.0",
   "client": {
-    "organization": "Orderer"
+    "organization": "Pharma"
   },
   "organizations": {
-    "Orderer": {
-      "mspid": "OrdererMSP",
+    "Pharma": {
+      "mspid": "PharmaMSP",
       "peers": [
         "peer0.pharma.example.com",
         "peer0.hospital.example.com",
         "peer0.tracker.example.com"
       ],
       "certificateAuthorities": [
-        "ca.orderer.example.com"
+        "ca.pharma.example.com"
       ]
     }
   },
@@ -30,9 +30,9 @@
     }
   },
   "certificateAuthorities": {
-    "ca.orderer.example.com": {
-      "url": "http://localhost:7020",
-      "caName": "ca.orderer.example.com",
+    "ca.pharma.example.com": {
+      "url": "http://localhost:7040",
+      "caName": "ca.pharma.example.com",
       "httpOptions": {
         "verify": false
       }

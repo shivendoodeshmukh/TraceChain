@@ -1,6 +1,6 @@
 PeerOrgs:
-  - Name: Manufacturer
-    Domain: manufacturer.example.com
+  - Name: IoTTracker
+    Domain: tracker.example.com
     Specs:
     Template:
       Count: 1

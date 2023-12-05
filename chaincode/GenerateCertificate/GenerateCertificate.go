@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
@@ -14,23 +15,23 @@ type GenerateCertificate struct {
 }
 
 type Log struct {
-	DeviceID     string   `json:"deviceID"`
-	Lat          string   `json:"lat"`
-	Lon          string   `json:"lon"`
-	IntTemp      string   `json:"intTemp"`
-	ExtTemp      string   `json:"extTemp"`
-	Hum          string   `json:"hum"`
-	MaxXAccl     string   `json:"maxXAccl"`
-	MaxYAccl     string   `json:"maxYAccl"`
-	MaxZAccl     string   `json:"maxZAccl"`
-	Pitch        string   `json:"pitch"`
-	Roll         string   `json:"roll"`
-	Yaw          string   `json:"yaw"`
-	Alt          string   `json:"alt"`
-	Satellites   string   `json:"satellites"`
-	Timestamp    string   `json:"timestamp"`
-	PrevHash     [32]byte `json:"prevHash"`
-	Capabilities string   `json:"capabilities"`
+	DeviceID     string `json:"deviceID"`
+	Lat          string `json:"lat"`
+	Lon          string `json:"lon"`
+	IntTemp      string `json:"intTemp"`
+	ExtTemp      string `json:"extTemp"`
+	Hum          string `json:"hum"`
+	MaxXAccl     string `json:"maxXAccl"`
+	MaxYAccl     string `json:"maxYAccl"`
+	MaxZAccl     string `json:"maxZAccl"`
+	Pitch        string `json:"pitch"`
+	Roll         string `json:"roll"`
+	Yaw          string `json:"yaw"`
+	Alt          string `json:"alt"`
+	Satellites   string `json:"satellites"`
+	Timestamp    string `json:"timestamp"`
+	PrevHash     string `json:"prevHash"`
+	Capabilities string `json:"capabilities"`
 }
 
 // Certificate represents a certificate
@@ -58,7 +59,7 @@ func (r *GenerateCertificate) Init(ctx contractapi.TransactionContextInterface) 
 }
 
 // GenerateCertificate generates a certificate, returning the certificate hash
-func (r *GenerateCertificate) GenerateCertificate(ctx contractapi.TransactionContextInterface, deviceID string, maxIntTemp string, minIntTemp string, maxExtTemp string, minExtTemp string, maxHum string, maxXAccl string, maxYAccl string, maxZAccl string, maxPitch string, maxRoll string, maxYaw string, maxAlt string) ([32]byte, error) {
+func (r *GenerateCertificate) GenerateCertificate(ctx contractapi.TransactionContextInterface, deviceID string, maxIntTemp string, minIntTemp string, maxExtTemp string, minExtTemp string, maxHum string, maxXAccl string, maxYAccl string, maxZAccl string, maxPitch string, maxRoll string, maxYaw string, maxAlt string) (string, error) {
 	timestamp := time.Now().UTC().Format("2006-01-02 15:04:05")
 
 	certificate := Certificate{
@@ -81,21 +82,21 @@ func (r *GenerateCertificate) GenerateCertificate(ctx contractapi.TransactionCon
 
 	certificateJSON, err := json.Marshal(certificate)
 	if err != nil {
-		return [32]byte{}, err
+		return "", err
 	}
 
-	hash := sha256.Sum256(certificateJSON)
+	hash := fmt.Sprintf("%x", sha256.Sum256(certificateJSON))
 
 	err = ctx.GetStub().PutState(hash, certificateJSON)
 	if err != nil {
-		return [32]byte{}, err
+		return "", err
 	}
 
 	return hash, nil
 }
 
 // ValidateCertificate validates a certificate against a logstream
-func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionContextInterface, certificateHash [32]byte, logstreamHash [32]byte) (bool, error) {
+func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionContextInterface, certificateHash string, logstreamHash string) (bool, error) {
 	certificateBytes, err := ctx.GetStub().GetState(certificateHash)
 	if err != nil {
 		return false, err
@@ -104,12 +105,18 @@ func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionCon
 		return false, nil
 	}
 
-	chainCodeArgs := ctx.util.ToChaincodeArgs("getAllLogsByDeviceID", certificateBytes.(Certificate).DeviceID)
+	var certificate Certificate
+	err = json.Unmarshal([]byte(certificateBytes), &certificate)
+	if err != nil {
+		return false, err
+	}
+
+	chainCodeArgs := [][]byte{[]byte("getAllLogsByDeviceID"), []byte(logstreamHash)}
 	// Get logstream by calling LogContract chaincode
 	resp := ctx.GetStub().InvokeChaincode("LogContract", chainCodeArgs, "supply")
 
-	if resp.Status != ctx.shim.OK {
-		return false, ctx.shim.error(resp.Message)
+	if resp.Status != 200 {
+		return false, fmt.Errorf("failed to get logstream: %s", resp.Message)
 	}
 
 	logstream := resp.Payload
@@ -122,43 +129,54 @@ func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionCon
 	// Check if logstream is valid
 	for i := 0; i < len(logs); i++ {
 		if logs[i].PrevHash != logs[i-1].PrevHash {
-			return false, err("Logstream is invalid (prevHash mismatch)")
+			return false, fmt.Errorf("logstream invalidates certificate (prevHash mismatch)")
 		}
 	}
 
 	// Check if logstream meets certificate constraints
 	for i := 0; i < len(logs); i++ {
-		if logs[i].IntTemp > certificateBytes.(Certificate).MaxIntTemp || logs[i].IntTemp < certificateBytes.(Certificate).MinIntTemp {
-			return false, err("Log invalidates certificate (intTemp out of bounds)")
+		if logs[i].IntTemp > certificate.MaxIntTemp || logs[i].IntTemp < certificate.MinIntTemp {
+			return false, fmt.Errorf("logstream invalidates certificate (intTemp constraint not met)")
 		}
-		if logs[i].ExtTemp > certificateBytes.(Certificate).MaxExtTemp || logs[i].ExtTemp < certificateBytes.(Certificate).MinExtTemp {
-			return false, err("Log invalidates certificate (extTemp out of bounds)")
+		if logs[i].ExtTemp > certificate.MaxExtTemp || logs[i].ExtTemp < certificate.MinExtTemp {
+			return false, fmt.Errorf("logstream invalidates certificate (extTemp constraint not met)")
 		}
-		if logs[i].Hum > certificateBytes.(Certificate).MaxHum {
-			return false, err("Log invalidates certificate (hum out of bounds)")
+		if logs[i].Hum > certificate.MaxHum {
+			return false, fmt.Errorf("logstream invalidates certificate (hum constraint not met)")
 		}
-		if logs[i].MaxXAccl > certificateBytes.(Certificate).MaxXAccl {
-			return false, err("Log invalidates certificate (maxXAccl out of bounds)")
+		if logs[i].MaxXAccl > certificate.MaxXAccl {
+			return false, fmt.Errorf("logstream invalidates certificate (maxXAccl constraint not met)")
 		}
-		if logs[i].MaxYAccl > certificateBytes.(Certificate).MaxYAccl {
-			return false, err("Log invalidates certificate (maxYAccl out of bounds)")
+		if logs[i].MaxYAccl > certificate.MaxYAccl {
+			return false, fmt.Errorf("logstream invalidates certificate (maxYAccl constraint not met)")
 		}
-		if logs[i].MaxZAccl > certificateBytes.(Certificate).MaxZAccl {
-			return false, err("Log invalidates certificate (maxZAccl out of bounds)")
+		if logs[i].MaxZAccl > certificate.MaxZAccl {
+			return false, fmt.Errorf("logstream invalidates certificate (maxZAccl constraint not met)")
 		}
-		if logs[i].Pitch > certificateBytes.(Certificate).MaxPitch {
-			return false, err("Log invalidates certificate (pitch out of bounds)")
+		if logs[i].Pitch > certificate.MaxPitch {
+			return false, fmt.Errorf("logstream invalidates certificate (pitch constraint not met)")
 		}
-		if logs[i].Roll > certificateBytes.(Certificate).MaxRoll {
-			return false, err("Log invalidates certificate (roll out of bounds)")
+		if logs[i].Roll > certificate.MaxRoll {
+			return false, fmt.Errorf("logstream invalidates certificate (roll constraint not met)")
 		}
-		if logs[i].Yaw > certificateBytes.(Certificate).MaxYaw {
-			return false, err("Log invalidates certificate (yaw out of bounds)")
+		if logs[i].Yaw > certificate.MaxYaw {
+			return false, fmt.Errorf("logstream invalidates certificate (yaw constraint not met)")
 		}
-		if logs[i].Alt > certificateBytes.(Certificate).MaxAlt {
-			return false, err("Log invalidates certificate (alt out of bounds)")
+		if logs[i].Alt > certificate.MaxAlt {
+			return false, fmt.Errorf("logstream invalidates certificate (alt constraint not met)")
 		}
 	}
 
 	return true, nil
+}
+
+func main() {
+	chaincode, err := contractapi.NewChaincode(new(GenerateCertificate))
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if err := chaincode.Start(); err != nil {
+		panic(err.Error())
+	}
 }

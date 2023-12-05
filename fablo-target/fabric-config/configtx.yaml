@@ -51,80 +51,74 @@ Organizations:
 
       AnchorPeers:
 
-    - &Supplier
-      Name: SupplierMSP
-      ID: SupplierMSP
-      MSPDir: crypto-config/peerOrganizations/supplier.example.com/msp
+    - &Pharma
+      Name: PharmaMSP
+      ID: PharmaMSP
+      MSPDir: crypto-config/peerOrganizations/pharma.example.com/msp
 
       Policies:
           Readers:
               Type: Signature
-              Rule: "OR('SupplierMSP.member')"
+              Rule: "OR('PharmaMSP.member')"
           Writers:
               Type: Signature
-              Rule: "OR('SupplierMSP.member')"
+              Rule: "OR('PharmaMSP.member')"
           Admins:
               Type: Signature
-              Rule: "OR('SupplierMSP.admin')"
+              Rule: "OR('PharmaMSP.admin')"
           Endorsement:
               Type: Signature
-              Rule: "OR('SupplierMSP.member')"
+              Rule: "OR('PharmaMSP.member')"
 
       AnchorPeers:
-          - Host: peer0.supplier.example.com
+          - Host: peer0.pharma.example.com
             Port: 7041
 
-          - Host: peer1.supplier.example.com
-            Port: 7042
-
-    - &Manufacturer
-      Name: ManufacturerMSP
-      ID: ManufacturerMSP
-      MSPDir: crypto-config/peerOrganizations/manufacturer.example.com/msp
+    - &Hospital
+      Name: HospitalMSP
+      ID: HospitalMSP
+      MSPDir: crypto-config/peerOrganizations/hospital.example.com/msp
 
       Policies:
           Readers:
               Type: Signature
-              Rule: "OR('ManufacturerMSP.member')"
+              Rule: "OR('HospitalMSP.member')"
           Writers:
               Type: Signature
-              Rule: "OR('ManufacturerMSP.member')"
+              Rule: "OR('HospitalMSP.member')"
           Admins:
               Type: Signature
-              Rule: "OR('ManufacturerMSP.admin')"
+              Rule: "OR('HospitalMSP.admin')"
           Endorsement:
               Type: Signature
-              Rule: "OR('ManufacturerMSP.member')"
+              Rule: "OR('HospitalMSP.member')"
 
       AnchorPeers:
-          - Host: peer0.manufacturer.example.com
+          - Host: peer0.hospital.example.com
             Port: 7061
 
-    - &Distributor
-      Name: DistributorMSP
-      ID: DistributorMSP
-      MSPDir: crypto-config/peerOrganizations/distributor.example.com/msp
+    - &IoTTracker
+      Name: IoTTrackerMSP
+      ID: IoTTrackerMSP
+      MSPDir: crypto-config/peerOrganizations/tracker.example.com/msp
 
       Policies:
           Readers:
               Type: Signature
-              Rule: "OR('DistributorMSP.member')"
+              Rule: "OR('IoTTrackerMSP.member')"
           Writers:
               Type: Signature
-              Rule: "OR('DistributorMSP.member')"
+              Rule: "OR('IoTTrackerMSP.member')"
           Admins:
               Type: Signature
-              Rule: "OR('DistributorMSP.admin')"
+              Rule: "OR('IoTTrackerMSP.admin')"
           Endorsement:
               Type: Signature
-              Rule: "OR('DistributorMSP.member')"
+              Rule: "OR('IoTTrackerMSP.member')"
 
       AnchorPeers:
-          - Host: peer0.distributor.example.com
+          - Host: peer0.tracker.example.com
             Port: 7081
-
-          - Host: peer1.distributor.example.com
-            Port: 7082
 
 ################################################################################
 #   SECTION: Application
@@ -203,9 +197,9 @@ Profiles:
             SampleConsortium:
                 Organizations:
                     - *Orderer
-                    - *Supplier
-                    - *Manufacturer
-                    - *Distributor
+                    - *Pharma
+                    - *Hospital
+                    - *IoTTracker
 
     # Profile used to create channeltx for supply #
     Supply:
@@ -220,31 +214,12 @@ Profiles:
         Consortiums:
             SampleConsortium:
                 Organizations:
-                    - *Supplier
-                    - *Manufacturer
+                    - *Pharma
+                    - *Hospital
+                    - *IoTTracker
         Application:
             <<: *ApplicationDefaults
             Organizations:
-                - *Supplier
-                - *Manufacturer
-
-    # Profile used to create channeltx for distribution #
-    Distribution:
-        <<: *ChannelDefaults
-        Orderer:
-            <<: *Group1Defaults
-            Organizations:
-                - *Orderer
-            Capabilities:
-                <<: *ApplicationCapabilities
-        Consortium: SampleConsortium
-        Consortiums:
-            SampleConsortium:
-                Organizations:
-                    - *Manufacturer
-                    - *Distributor
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *Manufacturer
-                - *Distributor
+                - *Pharma
+                - *Hospital
+                - *IoTTracker

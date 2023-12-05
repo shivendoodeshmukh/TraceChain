@@ -1,17 +1,17 @@
-name: fablo-test-network-orderer
-description: Connection profile for Orderer in Fablo network
+name: fablo-test-network-iottracker
+description: Connection profile for IoTTracker in Fablo network
 version: 1.0.0
 client:
-  organization: Orderer
+  organization: IoTTracker
 organizations:
-  Orderer:
-    mspid: OrdererMSP
+  IoTTracker:
+    mspid: IoTTrackerMSP
     peers:
       - peer0.pharma.example.com
       - peer0.hospital.example.com
       - peer0.tracker.example.com
     certificateAuthorities:
-      - ca.orderer.example.com
+      - ca.tracker.example.com
 peers:
   peer0.pharma.example.com:
     url: grpc://localhost:7041
@@ -20,8 +20,8 @@ peers:
   peer0.tracker.example.com:
     url: grpc://localhost:7081
 certificateAuthorities:
-  ca.orderer.example.com:
-    url: http://localhost:7020
-    caName: ca.orderer.example.com
+  ca.tracker.example.com:
+    url: http://localhost:7080
+    caName: ca.tracker.example.com
     httpOptions:
       verify: false

@@ -20,19 +20,40 @@
   },
   "peers": {
     "peer0.pharma.example.com": {
-      "url": "grpc://localhost:7041"
+      "url": "grpcs://localhost:7041",
+      "tlsCACerts": {
+        "path": "/home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.pharma.example.com"
+      }
     },
     "peer0.hospital.example.com": {
-      "url": "grpc://localhost:7061"
+      "url": "grpcs://localhost:7061",
+      "tlsCACerts": {
+        "path": "/home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.hospital.example.com"
+      }
     },
     "peer0.tracker.example.com": {
-      "url": "grpc://localhost:7081"
+      "url": "grpcs://localhost:7081",
+      "tlsCACerts": {
+        "path": "/home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.tracker.example.com"
+      }
     }
   },
   "certificateAuthorities": {
     "ca.hospital.example.com": {
       "url": "http://localhost:7060",
       "caName": "ca.hospital.example.com",
+      "tlsCACerts": {
+        "path": "/home/shivendoo/TraceChain/fablo-target/fabric-config/crypto-config/peerOrganizations/hospital.example.com/ca/ca.hospital.example.com-cert.pem"
+      },
       "httpOptions": {
         "verify": false
       }

@@ -14,6 +14,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.orderer.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7020:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -37,6 +38,12 @@ services:
       #
       - CORE_PEER_LOCALMSPID=OrdererMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/msp
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@orderer.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -44,6 +51,10 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.pharma.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.hospital.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.tracker.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
       - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
       - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
@@ -57,11 +68,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=OrdererMSP
-      - FABRIC_CA_URL=http://ca.orderer.example.com:7054
+      - FABRIC_CA_URL=https://ca.orderer.example.com:7054
       - FABRIC_CA_NAME=ca.orderer.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
+      - DISCOVERY_URLS=grpcs://peer0.pharma.example.com:7041,grpcs://peer0.hospital.example.com:7061,grpcs://peer0.tracker.example.com:7081
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt,/crypto/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt,/crypto/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8800:8000
     networks:
@@ -79,6 +95,17 @@ services:
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - GODEBUG=netdns=go
+      # metrics
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer0.group1.orderer.example.com:9440
+      - ORDERER_METRICS_PROVIDER=prometheus
+      # enabled TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
     working_dir: /var/hyperledger/orderer
     command: orderer
     ports:
@@ -100,6 +127,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.pharma.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7040:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -124,6 +152,12 @@ services:
       - CORE_PEER_LOCALMSPID=PharmaMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@pharma.example.com/msp
       - CORE_PEER_ADDRESS=peer0.pharma.example.com:7041
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@pharma.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@pharma.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@pharma.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -131,6 +165,10 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.pharma.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.hospital.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.tracker.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
       - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
       - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
@@ -144,11 +182,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=PharmaMSP
-      - FABRIC_CA_URL=http://ca.pharma.example.com:7054
+      - FABRIC_CA_URL=https://ca.pharma.example.com:7054
       - FABRIC_CA_NAME=ca.pharma.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
+      - DISCOVERY_URLS=grpcs://peer0.pharma.example.com:7041,grpcs://peer0.hospital.example.com:7061,grpcs://peer0.tracker.example.com:7081
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt,/crypto/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt,/crypto/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8801:8000
     networks:
@@ -182,6 +225,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/
@@ -207,6 +255,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.hospital.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7060:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -231,6 +280,12 @@ services:
       - CORE_PEER_LOCALMSPID=HospitalMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@hospital.example.com/msp
       - CORE_PEER_ADDRESS=peer0.hospital.example.com:7061
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@hospital.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@hospital.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@hospital.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -238,6 +293,10 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.pharma.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.hospital.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.tracker.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
       - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
       - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
@@ -251,11 +310,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=HospitalMSP
-      - FABRIC_CA_URL=http://ca.hospital.example.com:7054
+      - FABRIC_CA_URL=https://ca.hospital.example.com:7054
       - FABRIC_CA_NAME=ca.hospital.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
+      - DISCOVERY_URLS=grpcs://peer0.pharma.example.com:7041,grpcs://peer0.hospital.example.com:7061,grpcs://peer0.tracker.example.com:7081
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt,/crypto/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt,/crypto/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8802:8000
     networks:
@@ -289,6 +353,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/
@@ -314,6 +383,7 @@ services:
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/crypto/ca.tracker.example.com-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/crypto/priv-key.pem
       - FABRIC_LOGGING_SPEC=${LOGGING_LEVEL}
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
     ports:
       - 7080:7054
     working_dir: /etc/hyperledger/fabric-ca-server
@@ -338,6 +408,12 @@ services:
       - CORE_PEER_LOCALMSPID=IoTTrackerMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/cli/crypto/users/Admin@tracker.example.com/msp
       - CORE_PEER_ADDRESS=peer0.tracker.example.com:7081
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/cli/crypto/users/Admin@tracker.example.com/tls/client.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/cli/crypto/users/Admin@tracker.example.com/tls/client.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/cli/crypto/users/Admin@tracker.example.com/tls/ca.crt
+      - TLS_CA_CERT_PATH=/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem
     working_dir: /var/hyperledger/cli/
     command: /bin/bash
     volumes:
@@ -345,6 +421,10 @@ services:
       - ../fabric-docker/scripts/cli:/var/hyperledger/cli/scripts/
       - ../fabric-config/config:/var/hyperledger/cli/config/ # genesis.block and channel.tx's
       - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com:/var/hyperledger/cli/crypto/
+      - ../fabric-config/crypto-config/peerOrganizations/orderer.example.com/peers/orderer0.group1.orderer.example.com/msp/tlscacerts/tlsca.orderer.example.com-cert.pem:/var/hyperledger/cli/crypto-orderer/tlsca.orderer.example.com-cert.pem:ro
+      - ../fabric-config/crypto-config/peerOrganizations/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.pharma.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.hospital.example.com/tls/ca.crt:ro
+      - ../fabric-config/crypto-config/peerOrganizations/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt:/var/hyperledger/cli/crypto-peer/peer0.tracker.example.com/tls/ca.crt:ro
       - ../fabric-config/chaincode-packages:/var/hyperledger/cli/chaincode-packages/
       - "$CHAINCODES_BASE_DIR/./chaincode/LogContract/:/var/hyperledger/cli/LogContract/"
       - "$CHAINCODES_BASE_DIR/./chaincode/GenerateCertificate/:/var/hyperledger/cli/GenerateCertificate/"
@@ -358,11 +438,16 @@ services:
     environment:
       - PORT=8000
       - MSP_ID=IoTTrackerMSP
-      - FABRIC_CA_URL=http://ca.tracker.example.com:7054
+      - FABRIC_CA_URL=https://ca.tracker.example.com:7054
       - FABRIC_CA_NAME=ca.tracker.example.com
       - AS_LOCALHOST=false
-      - DISCOVERY_URLS=grpc://peer0.pharma.example.com:7041,grpc://peer0.hospital.example.com:7061,grpc://peer0.tracker.example.com:7081
+      - DISCOVERY_URLS=grpcs://peer0.pharma.example.com:7041,grpcs://peer0.hospital.example.com:7061,grpcs://peer0.tracker.example.com:7081
+      - DISCOVERY_SSL_TARGET_NAME_OVERRIDES=
+      - DISCOVERY_TLS_CA_CERT_FILES=/crypto/pharma.example.com/peers/peer0.pharma.example.com/tls/ca.crt,/crypto/hospital.example.com/peers/peer0.hospital.example.com/tls/ca.crt,/crypto/tracker.example.com/peers/peer0.tracker.example.com/tls/ca.crt
       - HFC_LOGGING={"error":"console","warn":"console","info":"console"}
+    volumes:
+      # note: fablo needs access to all anchor peer certs
+      - ../fabric-config/crypto-config/peerOrganizations:/crypto:ro
     ports:
       - 8803:8000
     networks:
@@ -396,6 +481,11 @@ services:
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - GODEBUG=netdns=go
+      # enabled TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer/tls/ca.crt
       # enabled gateway
       - CORE_PEER_GATEWAY_ENABLED=true
     working_dir: /etc/hyperledger/fabric/peer/

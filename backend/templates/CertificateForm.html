@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+    <title>Certificate Form</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="mt-5">Enter Certificate Details</h1>
+    <form id="certificateForm" class="mt-3">
+        <div class="form-group">
+            <label for="deviceID">Device ID</label>
+            <input type="text" class="form-control" id="deviceID" placeholder="Enter device ID">
+        </div>
+        <div class="form-group">
+            <label for="maxIntTemp">Max Internal Temperature</label>
+            <input type="text" class="form-control" id="maxIntTemp" placeholder="Enter max internal temperature">
+        </div>
+        <div class="form-group">
+            <label for="minIntTemp">Min Internal Temperature</label>
+            <input type="text" class="form-control" id="minIntTemp" placeholder="Enter min internal temperature">
+        </div>
+        <div class="form-group">
+            <label for="maxExtTemp">Max External Temperature</label>
+            <input type="text" class="form-control" id="maxExtTemp" placeholder="Enter max external temperature">
+        </div>
+        <div class="form-group">
+            <label for="minExtTemp">Min External Temperature</label>
+            <input type="text" class="form-control" id="minExtTemp" placeholder="Enter min external temperature">
+        </div>
+        <div class="form-group">
+            <label for="maxHum">Max Humidity</label>
+            <input type="text" class="form-control" id="maxHum" placeholder="Enter max humidity">
+        </div>
+        <div class="form-group">
+            <label for="maxXAccl">Max X-Acceleration</label>
+            <input type="text" class="form-control" id="maxXAccl" placeholder="Enter max X-acceleration">
+        </div>
+        <div class="form-group">
+            <label for="maxYAccl">Max Y-Acceleration</label>
+            <input type="text" class="form-control" id="maxYAccl" placeholder="Enter max Y-acceleration">
+        </div>
+        <div class="form-group">
+            <label for="maxZAccl">Max Z-Acceleration</label>
+            <input type="text" class="form-control" id="maxZAccl" placeholder="Enter max Z-acceleration">
+        </div>
+        <div class="form-group">
+            <label for="maxPitch">Max Pitch</label>
+            <input type="text" class="form-control" id="maxPitch" placeholder="Enter max pitch">
+        </div>
+        <div class="form-group">
+            <label for="maxRoll">Max Roll</label>
+            <input type="text" class="form-control" id="maxRoll" placeholder="Enter max roll">
+        </div>
+        <div class="form-group">
+            <label for="maxYaw">Max Yaw</label>
+            <input type="text" class="form-control" id="maxYaw" placeholder="Enter max yaw">
+        </div>
+        <div class="form-group">
+            <label for="maxAlt">Max Altitude</label>
+            <input type="text" class="form-control" id="maxAlt" placeholder="Enter max altitude">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+    <!-- Form submission script -->
+    <script>
+        document.getElementById('certificateForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Show popup box for username and password
+            var username = prompt('Enter your username:');
+            var password = prompt('Enter your password:');
+
+            fetch('/api/generateCertificate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // Send each field as a JSON string
+                body: JSON.stringify({
+                    deviceID: username,
+                    password: password,
+                    targetDeviceID: document.getElementById('deviceID').value,
+                    maxIntTemp: document.getElementById('maxIntTemp').value,
+                    minIntTemp: document.getElementById('minIntTemp').value,
+                    maxExtTemp: document.getElementById('maxExtTemp').value,
+                    minExtTemp: document.getElementById('minExtTemp').value,
+                    maxHum: document.getElementById('maxHum').value,
+                    maxXAccl: document.getElementById('maxXAccl').value,
+                    maxYAccl: document.getElementById('maxYAccl').value,
+                    maxZAccl: document.getElementById('maxZAccl').value,
+                    maxPitch: document.getElementById('maxPitch').value,
+                    maxRoll: document.getElementById('maxRoll').value,
+                    maxYaw: document.getElementById('maxYaw').value,
+                    maxAlt: document.getElementById('maxAlt').value
+                })
+            }).then(function(response) {
+                if (response.ok) {
+                    alert('Certificate data submitted successfully!');
+                    alert ('Your certificate is: ' + response.text());
+                } else {
+                    alert('Failed to submit certificate data');
+                }
+            }).catch(function(error) {
+                alert('Failed to submit certificate data: ' + error.message);
+            });
+        });
+    </script>

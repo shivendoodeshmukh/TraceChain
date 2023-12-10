@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "client": {
     "organization": "Hospital",
-    "tlsEnable": false,
+    "tlsEnable": true,
     "enableAuthentication": true,
     "adminCredential": {
       "id": "admin",
@@ -35,7 +35,7 @@
   },
   "peers": {
     "peer0.hospital.example.com": {
-      "url": "grpc://peer0.hospital.example.com:7061",
+      "url": "grpcs://peer0.hospital.example.com:7061",
       "tlsCACerts": {
         "path": "/tmp/crypto/peerOrganizations/hospital.example.com/msp/tlscacerts/tlsca.hospital.example.com-cert.pem"
       }

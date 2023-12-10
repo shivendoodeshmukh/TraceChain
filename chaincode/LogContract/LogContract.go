@@ -34,6 +34,24 @@ type Log struct {
 	Capabilities string `json:"capabilities"`
 }
 
+type Certificate struct {
+	DeviceID    string `json:"deviceID"`
+	MaxIntTemp  string `json:"maxIntTemp"`
+	MinIntTemp  string `json:"minIntTemp"`
+	MaxExtTemp  string `json:"maxExtTemp"`
+	MinExtTemp  string `json:"minExtTemp"`
+	MaxHum      string `json:"maxHum"`
+	MaxXAccl    string `json:"maxXAccl"`
+	MaxYAccl    string `json:"maxYAccl"`
+	MaxZAccl    string `json:"maxZAccl"`
+	MaxPitch    string `json:"maxPitch"`
+	MaxRoll     string `json:"maxRoll"`
+	MaxYaw      string `json:"maxYaw"`
+	MaxAlt      string `json:"maxAlt"`
+	CreatedAt   string `json:"createdAt"`
+	LastUpdated string `json:"lastUpdated"`
+}
+
 func (r *LogContract) Init(ctx contractapi.TransactionContextInterface, deviceID string, capabilities string) error {
 	fmt.Println("init")
 
@@ -65,29 +83,34 @@ func (r *LogContract) Init(ctx contractapi.TransactionContextInterface, deviceID
 	return nil
 }
 
-func (r *LogContract) log(ctx contractapi.TransactionContextInterface, deviceID string, lat string, lon string, extTemp string, intTemp string, hum string, maxXAccl string, maxYAccl string, maxZAccl string, pitch string, roll string, yaw string, timestamp string) error {
+func (r *LogContract) AppendLog(ctx contractapi.TransactionContextInterface, deviceID string, lat string, lon string, extTemp string, intTemp string, hum string, maxXAccl string, maxYAccl string, maxZAccl string, pitch string, roll string, yaw string, alt string, satellites string, timestamp string) error {
 	fmt.Println("log")
 
 	prevHash, err := ctx.GetStub().GetState(deviceID)
 	if err != nil {
 		return err
 	}
+	if string(prevHash) == "" {
+		return fmt.Errorf("device not initialized %b", prevHash)
+	}
 
 	log := Log{
-		DeviceID:  deviceID,
-		Lat:       lat,
-		Lon:       lon,
-		ExtTemp:   extTemp,
-		IntTemp:   intTemp,
-		Hum:       hum,
-		MaxXAccl:  maxXAccl,
-		MaxYAccl:  maxYAccl,
-		MaxZAccl:  maxZAccl,
-		Pitch:     pitch,
-		Roll:      roll,
-		Yaw:       yaw,
-		Timestamp: timestamp,
-		PrevHash:  string(prevHash),
+		DeviceID:   deviceID,
+		Lat:        lat,
+		Lon:        lon,
+		ExtTemp:    extTemp,
+		IntTemp:    intTemp,
+		Hum:        hum,
+		MaxXAccl:   maxXAccl,
+		MaxYAccl:   maxYAccl,
+		MaxZAccl:   maxZAccl,
+		Pitch:      pitch,
+		Roll:       roll,
+		Yaw:        yaw,
+		Timestamp:  timestamp,
+		Alt:        alt,
+		Satellites: satellites,
+		PrevHash:   string(prevHash),
 	}
 
 	logJSON, err := json.Marshal(log)
@@ -131,7 +154,7 @@ func (r *LogContract) log(ctx contractapi.TransactionContextInterface, deviceID 
 	return ctx.GetStub().PutState(hash, logJSON)
 }
 
-func (r *LogContract) getLog(ctx contractapi.TransactionContextInterface, hash string) (string, error) {
+func (r *LogContract) GetLog(ctx contractapi.TransactionContextInterface, hash string) (string, error) {
 	fmt.Println("getLog")
 
 	logJSON, err := ctx.GetStub().GetState(hash)
@@ -142,7 +165,7 @@ func (r *LogContract) getLog(ctx contractapi.TransactionContextInterface, hash s
 	return string(logJSON), nil
 }
 
-func (r *LogContract) getLogByDeviceID(ctx contractapi.TransactionContextInterface, deviceID string) (string, error) {
+func (r *LogContract) GetLogByDeviceID(ctx contractapi.TransactionContextInterface, deviceID string) (string, error) {
 	fmt.Println("getLogByDeviceID")
 
 	hash, err := ctx.GetStub().GetState(deviceID)
@@ -158,7 +181,18 @@ func (r *LogContract) getLogByDeviceID(ctx contractapi.TransactionContextInterfa
 	return string(logJSON), nil
 }
 
-func (r *LogContract) getAllLogsByDeviceID(ctx contractapi.TransactionContextInterface, deviceID string) ([]string, error) {
+func (r *LogContract) GetLatestHash(ctx contractapi.TransactionContextInterface, deviceID string) (string, error) {
+	fmt.Println("getLatestHash")
+
+	hash, err := ctx.GetStub().GetState(deviceID)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hash), nil
+}
+
+func (r *LogContract) GetAllLogsByDeviceID(ctx contractapi.TransactionContextInterface, deviceID string) ([]string, error) {
 	fmt.Println("getAllLogsByDeviceID")
 
 	hash, err := ctx.GetStub().GetState(deviceID)
@@ -175,9 +209,10 @@ func (r *LogContract) getAllLogsByDeviceID(ctx contractapi.TransactionContextInt
 	logs = append(logs, string(logJSON))
 
 	for {
-		log := Log{}
-		err = json.Unmarshal(logJSON, &log)
+		var log Log
+		err := json.Unmarshal(logJSON, &log)
 		if err != nil {
+			// return logJSON, err
 			return nil, err
 		}
 

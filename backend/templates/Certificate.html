@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
+    <title>Certificate Details</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="mt-5">Certificate Details</h1>
+      <div class="card mt-3">
+        <div class="card-body">
+          <p class="card-text">
+            Device ID: {{.Certificate.DeviceID}}<br>
+            Internal Temperature Range: {{.Certificate.MinIntTemp}}°C - {{.Certificate.MaxIntTemp}}°C<br>
+            External Temperature Range: {{.Certificate.MinExtTemp}}°C - {{.Certificate.MaxExtTemp}}°C<br>
+            Max Humidity: {{.Certificate.MaxHum}}%<br>
+            Max X Acceleration: {{.Certificate.MaxXAccl}}m/s²<br>
+            Max Y Acceleration: {{.Certificate.MaxYAccl}}m/s²<br>
+            Max Z Acceleration: {{.Certificate.MaxZAccl}}m/s²<br>
+            Max Pitch: {{.Certificate.MaxPitch}}°<br>
+            Max Roll: {{.Certificate.MaxRoll}}°<br>
+            Max Yaw: {{.Certificate.MaxYaw}}°<br>
+            Max Altitude: {{.Certificate.MaxAlt}}m<br>
+            Created At: {{.Certificate.CreatedAt}}<br>
+            Last Updated: {{.Certificate.LastUpdated}}<br>
+            Valid: {{.Valid}}<br>
+          </p>
+        </div>
+      </div>
+
+      <h2 class="mt-5">Waypoints</h2>
+      <div id="map" style="height: 400px;"></div>
+    </div>
+
+    <!-- Map widget script -->
+    <script>
+      var waypoints = {{.Waypoints}};
+        var map = L.map('map').setView([waypoints[0].Lat, waypoints[0].Lon], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+        }).addTo(map);
+        var marker = L.marker([waypoints[0].Lat, waypoints[0].Lon]).addTo(map);
+        var polyline = L.polyline(waypoints.map(waypoint => [waypoint.Lat, waypoint.Lon]), {color: 'red'}).addTo(map);
+        for (var i = 0; i < waypoints.length; i++) {
+          var waypoint = waypoints[i];
+          var marker = L.marker([waypoint.Lat, waypoint.Lon]).addTo(map);
+          marker.bindPopup("<b>Waypoint " + (i + 1) + "</b><br>Internal Temp: " + waypoint.Log.intTemp + "°C<br>External Temp: " + waypoint.Log.extTemp + "°C<br>Humidity: " + waypoint.Log.hum + "%<br>Max X Acceleration: " + waypoint.Log.maxXAccl + "m/s²<br>Max Y Acceleration: " + waypoint.Log.maxYAccl + "m/s²<br>Max Z Acceleration: " + waypoint.Log.maxZAccl + "m/s²<br>Pitch: " + waypoint.Log.pitch + "°<br>Roll: " + waypoint.Log.roll + "°<br>Yaw: " + waypoint.Log.yaw + "°<br>Altitude: " + waypoint.Log.alt + "m<br>Satellites: " + waypoint.Log.satellites + "<br>Timestamp: " + waypoint.Log.timestamp);
+        }
+    </script>
+  </body>
+</html>

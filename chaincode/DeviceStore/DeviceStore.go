@@ -1,11 +1,11 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // SmartContract provides authentication for IoT Tracker
@@ -17,6 +17,7 @@ type DeviceStore struct {
 type Device struct {
 	DeviceID     string `json:"deviceID"`
 	PasswordHash string `json:"password"`
+	Role         string `json:"role"`
 }
 
 // Init initializes the device store
@@ -25,17 +26,18 @@ func (r *DeviceStore) Init(ctx contractapi.TransactionContextInterface) error {
 }
 
 // RegisterDevice registers a device (avoid overwriting existing device)
-func (r *DeviceStore) RegisterDevice(ctx contractapi.TransactionContextInterface, deviceID string, password string) error {
+func (r *DeviceStore) RegisterDevice(ctx contractapi.TransactionContextInterface, deviceID string, password string, role string) error {
 
-	// Salt and hash the password
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
+	// hash the password
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(password)))
+	if hash == "" || hash == " " || hash == "  " {
+		return fmt.Errorf("password hash is empty")
 	}
 
 	device := Device{
 		DeviceID:     deviceID,
 		PasswordHash: string(hash),
+		Role:         role,
 	}
 
 	// Check if device already exists
@@ -61,28 +63,32 @@ func (r *DeviceStore) RegisterDevice(ctx contractapi.TransactionContextInterface
 }
 
 // AuthenticateDevice authenticates a device
-func (r *DeviceStore) AuthenticateDevice(ctx contractapi.TransactionContextInterface, deviceID string, password string) (bool, error) {
+func (r *DeviceStore) AuthenticateDevice(ctx contractapi.TransactionContextInterface, deviceID string, password string) (string, error) {
 
 	device, err := ctx.GetStub().GetState(deviceID)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	if device == nil {
-		return false, nil
+		return "", fmt.Errorf("device does not exist")
+	}
+
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(password)))
+	if hash == "" || hash == " " || hash == "  " {
+		return "", fmt.Errorf("password hash is empty")
 	}
 
 	var deviceStruct Device
 	err = json.Unmarshal(device, &deviceStruct)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(deviceStruct.PasswordHash), []byte(password))
-	if err != nil {
-		return false, nil
+	if deviceStruct.PasswordHash != hash {
+		return "", fmt.Errorf("incorrect password")
 	}
 
-	return true, nil
+	return deviceStruct.Role, nil
 }
 
 func main() {

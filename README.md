@@ -2,9 +2,14 @@
 
 ## Command to invoke smart contract
 
-Create a raw material
+Create a new user
 ```bash
-docker exec -e CORE_PEER_ADDRESS="peer0.supplier.example.com:7041" "cli.supplier.example.com" peer chaincode invoke -o orderer0.group1.orderer.example.com:7030 -C supply -n rawMaterialTokenContract --peerAddresses peer0.supplier.example.com:7041 --peerAddresses peer1.supplier.example.com:7042 --peerAddresses peer0.manufacturer.example.com:7061 -c '{"Args":["CreateRawMaterial", "Cocoa"]}'
+docker exec -e CORE_PEER_ADDRESS="peer0.pharma.example.com" "cli.pharma.example.com" peer chaincode invoke -o orderer0.group1.orderer.example.com:7030 -C supply -n DeviceStore --peerAddresses peer0.pharma.example.com:7041 -c '{"Args":["RegisterDevice", "Admin-001", "adminpw", "admin"]}'
+```
+
+Authenticate a user
+```bash
+docker exec -e CORE_PEER_ADDRESS="peer0.pharma.example.com" "cli.pharma.example.com" peer chaincode invoke -o orderer0.group1.orderer.example.com:7030 -C supply -n DeviceStore --peerAddresses peer0.pharma.example.com:7041 -c '{"Args":["AuthenticateDevice", "Admin-001", "adminpw"]}'
 ```
 
 Create a raw material, but fail due to manufacturer trying

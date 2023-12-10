@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
@@ -96,7 +97,7 @@ func (r *GenerateCertificate) GenerateCertificate(ctx contractapi.TransactionCon
 }
 
 // ValidateCertificate validates a certificate against a logstream
-func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionContextInterface, certificateHash string, logstreamHash string) (bool, error) {
+func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionContextInterface, certificateHash string) (bool, error) {
 	certificateBytes, err := ctx.GetStub().GetState(certificateHash)
 	if err != nil {
 		return false, err
@@ -111,7 +112,7 @@ func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionCon
 		return false, err
 	}
 
-	chainCodeArgs := [][]byte{[]byte("getAllLogsByDeviceID"), []byte(logstreamHash)}
+	chainCodeArgs := [][]byte{[]byte("getAllLogsByDeviceID"), []byte(certificate.DeviceID)}
 	// Get logstream by calling LogContract chaincode
 	resp := ctx.GetStub().InvokeChaincode("LogContract", chainCodeArgs, "supply")
 
@@ -119,55 +120,94 @@ func (r *GenerateCertificate) ValidateCertificate(ctx contractapi.TransactionCon
 		return false, fmt.Errorf("failed to get logstream: %s", resp.Message)
 	}
 
-	logstream := resp.Payload
-	var logs []Log
-	err = json.Unmarshal([]byte(logstream), &logs)
+	logstreamraw := resp.Payload
+	var logstream []string
+	err = json.Unmarshal(logstreamraw, &logstream)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to unmarshal logstream: %s", err.Error())
 	}
+	var logs []Log
 
-	// Check if logstream is valid
-	for i := 0; i < len(logs); i++ {
-		if logs[i].PrevHash != logs[i-1].PrevHash {
-			return false, fmt.Errorf("logstream invalidates certificate (prevHash mismatch)")
+	for i := 0; i < len(logstream); i++ {
+		var log Log
+		err = json.Unmarshal([]byte(logstream[i]), &log)
+		if err != nil {
+			return false, fmt.Errorf("failed to unmarshal log: %s %s", err.Error(), logstream[i])
 		}
+		logs = append(logs, log)
 	}
 
 	// Check if logstream meets certificate constraints
 	for i := 0; i < len(logs); i++ {
-		if logs[i].IntTemp > certificate.MaxIntTemp || logs[i].IntTemp < certificate.MinIntTemp {
-			return false, fmt.Errorf("logstream invalidates certificate (intTemp constraint not met)")
+		intTemp, _ := strconv.ParseFloat(logs[i].IntTemp, 10)
+		extTemp, _ := strconv.ParseFloat(logs[i].ExtTemp, 10)
+		hum, _ := strconv.ParseFloat(logs[i].Hum, 10)
+		maxXAccl, _ := strconv.ParseFloat(logs[i].MaxXAccl, 10)
+		maxYAccl, _ := strconv.ParseFloat(logs[i].MaxYAccl, 10)
+		maxZAccl, _ := strconv.ParseFloat(logs[i].MaxZAccl, 10)
+		pitch, _ := strconv.ParseFloat(logs[i].Pitch, 10)
+		roll, _ := strconv.ParseFloat(logs[i].Roll, 10)
+		yaw, _ := strconv.ParseFloat(logs[i].Yaw, 10)
+		alt, _ := strconv.ParseFloat(logs[i].Alt, 10)
+
+		maxIntTemp, _ := strconv.ParseFloat(certificate.MaxIntTemp, 10)
+		minIntTemp, _ := strconv.ParseFloat(certificate.MinIntTemp, 10)
+		maxExtTemp, _ := strconv.ParseFloat(certificate.MaxExtTemp, 10)
+		minExtTemp, _ := strconv.ParseFloat(certificate.MinExtTemp, 10)
+		maxHum, _ := strconv.ParseFloat(certificate.MaxHum, 10)
+		maxXAcclcert, _ := strconv.ParseFloat(certificate.MaxXAccl, 10)
+		maxYAcclcert, _ := strconv.ParseFloat(certificate.MaxYAccl, 10)
+		maxZAcclcert, _ := strconv.ParseFloat(certificate.MaxZAccl, 10)
+		maxPitch, _ := strconv.ParseFloat(certificate.MaxPitch, 10)
+		maxRoll, _ := strconv.ParseFloat(certificate.MaxRoll, 10)
+		maxYaw, _ := strconv.ParseFloat(certificate.MaxYaw, 10)
+		maxAlt, _ := strconv.ParseFloat(certificate.MaxAlt, 10)
+
+		if (certificate.MaxIntTemp != "" && intTemp > maxIntTemp) || (certificate.MinIntTemp != "" && intTemp < minIntTemp) {
+			return false, fmt.Errorf("intTemp constraint not met: %s not between %s and %s", logs[i].IntTemp, certificate.MinIntTemp, certificate.MaxIntTemp)
 		}
-		if logs[i].ExtTemp > certificate.MaxExtTemp || logs[i].ExtTemp < certificate.MinExtTemp {
-			return false, fmt.Errorf("logstream invalidates certificate (extTemp constraint not met)")
+		if (certificate.MaxExtTemp != "" && extTemp > maxExtTemp) || (certificate.MinExtTemp != "" && extTemp < minExtTemp) {
+			return false, fmt.Errorf("extTemp constraint not met: %s not between %s and %s", logs[i].ExtTemp, certificate.MinExtTemp, certificate.MaxExtTemp)
 		}
-		if logs[i].Hum > certificate.MaxHum {
-			return false, fmt.Errorf("logstream invalidates certificate (hum constraint not met)")
+		if certificate.MaxHum != "" && hum > maxHum {
+			return false, fmt.Errorf("hum constraint not met: %s not below %s", logs[i].Hum, certificate.MaxHum)
 		}
-		if logs[i].MaxXAccl > certificate.MaxXAccl {
-			return false, fmt.Errorf("logstream invalidates certificate (maxXAccl constraint not met)")
+		if certificate.MaxXAccl != "" && maxXAccl > maxXAcclcert {
+			return false, fmt.Errorf("maxXAccl constraint not met: %s not below %s", logs[i].MaxXAccl, certificate.MaxXAccl)
 		}
-		if logs[i].MaxYAccl > certificate.MaxYAccl {
-			return false, fmt.Errorf("logstream invalidates certificate (maxYAccl constraint not met)")
+		if certificate.MaxYAccl != "" && maxYAccl > maxYAcclcert {
+			return false, fmt.Errorf("maxYAccl constraint not met: %s not below %s", logs[i].MaxYAccl, certificate.MaxYAccl)
 		}
-		if logs[i].MaxZAccl > certificate.MaxZAccl {
-			return false, fmt.Errorf("logstream invalidates certificate (maxZAccl constraint not met)")
+		if certificate.MaxZAccl != "" && maxZAccl > maxZAcclcert {
+			return false, fmt.Errorf("maxZAccl constraint not met: %s not below %s", logs[i].MaxZAccl, certificate.MaxZAccl)
 		}
-		if logs[i].Pitch > certificate.MaxPitch {
-			return false, fmt.Errorf("logstream invalidates certificate (pitch constraint not met)")
+		if certificate.MaxPitch != "" && pitch > maxPitch {
+			return false, fmt.Errorf("pitch constraint not met: %s not below %s", logs[i].Pitch, certificate.MaxPitch)
 		}
-		if logs[i].Roll > certificate.MaxRoll {
-			return false, fmt.Errorf("logstream invalidates certificate (roll constraint not met)")
+		if certificate.MaxRoll != "" && roll > maxRoll {
+			return false, fmt.Errorf("roll constraint not met: %s not below %s", logs[i].Roll, certificate.MaxRoll)
 		}
-		if logs[i].Yaw > certificate.MaxYaw {
-			return false, fmt.Errorf("logstream invalidates certificate (yaw constraint not met)")
+		if certificate.MaxYaw != "" && yaw > maxYaw {
+			return false, fmt.Errorf("yaw constraint not met: %s not below %s", logs[i].Yaw, certificate.MaxYaw)
 		}
-		if logs[i].Alt > certificate.MaxAlt {
-			return false, fmt.Errorf("logstream invalidates certificate (alt constraint not met)")
+		if certificate.MaxAlt != "" && alt > maxAlt {
+			return false, fmt.Errorf("alt constraint not met: %s not below %s", logs[i].Alt, certificate.MaxAlt)
 		}
 	}
 
 	return true, nil
+}
+
+func (r *GenerateCertificate) GetCertificateByHash(ctx contractapi.TransactionContextInterface, certificateHash string) (string, error) {
+	certificateBytes, err := ctx.GetStub().GetState(certificateHash)
+	if err != nil {
+		return "", err
+	}
+	if certificateBytes == nil {
+		return "", fmt.Errorf("certificate %s does not exist", certificateHash)
+	}
+
+	return string(certificateBytes), nil
 }
 
 func main() {

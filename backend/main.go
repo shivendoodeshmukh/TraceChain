@@ -258,11 +258,13 @@ func main() {
 		username := r.PostFormValue("deviceID")
 		password := r.PostFormValue("password")
 		role, err := AuthHelper(trackernet.GetContract(DeviceStoreChaincodeName), username, password)
+		fmt.Println(username, password, role)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(err.Error()))
 			actualErr, _ := status.FromError(err)
 			detailsString := fmt.Sprintf("%v", actualErr.Details())
+			fmt.Println("Error authenticating")
 			w.Write([]byte(detailsString))
 			fmt.Println(detailsString)
 			return
@@ -456,11 +458,7 @@ func main() {
 
 			valid, err := strconv.ParseBool(string(body))
 			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(err.Error()))
-				fmt.Println(err.Error())
-				fmt.Println("Error parsing valid")
-				return
+				valid = false
 			}
 			fmt.Println(valid)
 			waypoints := make([]waypoint, len(logs)-1)
@@ -486,7 +484,7 @@ func main() {
 	})
 
 	fmt.Println("Server started at port 8000")
-	log.Fatal(http.ListenAndServe(":8000", handlers.CORS()(r)))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8000", handlers.CORS()(r)))
 
 }
 
